@@ -36,29 +36,25 @@ router.post("/purchase", async (req, res) => {
           `INSERT INTO purchase( shop_id, products_id, price, qty_case, qty_item, purchase_date) 
           VALUES ( $1, $2, $3, $4, $5 ) 
           RETURNING item`,
-          [ shop_id, products_id, itemList.rows[0].purchase_price, qty_case, qty_item, purchase_date]
+          [shop_id, products_id, itemList.rows[0].purchase_price, qty_case, qty_item, purchase_date]
         );
         if (saved.rowCount) {
           saveLog.push({ item });
+          const qty = (qty_case * itemList.rows[0].per_case) + qty_item;
           const activeQty = await pool.query(
             `SELECT qty FROM shop_items WHERE item = $1 AND shop = $2`,
             [products_id, shop_id]
           );
           if (activeQty.rowCount) {
-            if(qty_case==0){
-              const newQty = parseFloat(activeQty.rows[0].qty) + parseFloat(qty_item);
-            }else if(qty_item==0){
-              qty=qty_case*itemList.rows[0].per_case;
-              const newQty = parseFloat(activeQty.rows[0].qty) + parseFloat(qty);
-            }
+            const newQty = parseFloat(activeQty.rows[0].qty) + parseFloat(qty);
             const updateActive = await pool.query(
-              `UPDATE shop_items set qty = $1 WHERE item = $2 AND shop = $3`,
+              `UPDATE stock set stock = $1 WHERE item = $2 AND shop = $3`,
               [newQty, products_id, shop_id]
             );
             continue;
           }
           const addActive = await pool.query(
-            `INSERT INTO shop_items( shop, item, qty )
+            `INSERT INTO stock( shop_id, products_id, stock )
             VALUES ( $1, $2, $3 )`,
             [shop_id, products_id, qty]
           );
