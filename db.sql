@@ -1,35 +1,48 @@
 -- CREATE DATABASE pos;
--- \c erp
+-- \c pos
 -- set extension
 -- CREATE extension IF NOT EXISTS "uuid-ossp";
 -- Create roles table
-CREATE TABLE roles (name TEXT PRIMARY KEY);
+CREATE TABLE roles (
+    id SERIAL PRIMARY KEY,
+    name TEXT UNIQUE NOT NULL
+);
 -- Create users table
 CREATE TABLE users (
-    name TEXT PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
+    name TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL,
     role TEXT NOT NULL REFERENCES roles(name),
     is_priviledged BOOLEAN NOT NULL DEFAULT FALSE
 );
 -- Create shops table
 CREATE TABLE shops (
-    name TEXT PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
+    name TEXT UNIQUE NOT NULL,
     license TEXT NOT NULL
 );
 -- CREATE domains table
 CREATE TABLE domains (
+    id SERIAL PRIMARY KEY,
     username TEXT NOT NULL REFERENCES users(name),
     shop TEXT NOT NULL REFERENCES shops(name)
 );
 -- Create brands table
-CREATE TABLE brands (name TEXT PRIMARY KEY);
+CREATE TABLE brands (
+    id SERIAL PRIMARY KEY,
+    name TEXT UNIQUE NOT NULL
+);
 -- Create categories table
-CREATE TABLE categories (name TEXT PRIMARY KEY);
+CREATE TABLE categories (
+    id SERIAL PRIMARY KEY,
+    name TEXT UNIQUE NOT NULL
+);
 -- Create sizes table
 CREATE TABLE sizes (size INTEGER PRIMARY KEY);
 -- Create products table
 CREATE TABLE products (
-    name TEXT PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
+    name TEXT UNIQUE NOT NULL,
     brand TEXT NOT NULL REFERENCES brands(name),
     category TEXT NOT NULL REFERENCES categories(name),
     size INTEGER NOT NULL REFERENCES sizes(size),
@@ -46,6 +59,7 @@ CREATE TABLE products (
 );
 -- Create stock table
 CREATE TABLE stock (
+    id SERIAL PRIMARY KEY,
     product TEXT NOT NULL REFERENCES products(name),
     shop TEXT NOT NULL REFERENCES shops(name),
     stock INTEGER NOT NULL
