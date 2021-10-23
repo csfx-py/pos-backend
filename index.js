@@ -19,6 +19,14 @@ app.get("/", (req, res) => {
   res.status(200).send("Hello");
 });
 
+const masterUsersRoutes = require("./routes/Master/Users");
+const masterItemsRoutes = require("./routes/Master/Items");
+const authRoutes = require("./routes/Auth/");
+
+app.use("/master/user", masterUsersRoutes);
+app.use("/master/items", masterItemsRoutes);
+app.use("/auth", authRoutes);
+
 app.listen(PORT, () => {
   console.log(`listening at http://localhost:${PORT}`);
 });
