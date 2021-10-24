@@ -1,8 +1,38 @@
 const router = require("express").Router();
 const pool = require("../../db");
-const splitInvoice = require("../Utils/splitInvoice");
-const verifyManager = require("../Utils/verifyManager");
-const verifyShop = require("../Utils/verifyShop");
+
+router.get("/items", async (req, res) => {
+  const { shops_id } = req.query;
+  try {
+    const priceList = await pool.query(
+      `select * from shops where id=$1`,
+      [shops_id]
+    );
+    const price = priceList.rows[0].price_to_use;
+
+    const itemList = await pool.query(
+      `select s.id as id, s.name as shop_name, p.id as products_id, p.name as products_name, 
+      p.barcode, st.stock, p.categories_id, c.name as categories_name, 
+      si.id as sizes_id, si.size, p.brands_id, b.name as brands_name, p.purchase_price, p.${price} as mrp, p.discount  
+      from shops s  
+      Left join stock st on st.shop_id = s.id
+      Left join products p on p.id = st.products_id
+      Left join categories c on c.id = p.categories_id
+      Left join sizes si on si.id = p.sizes_id
+      Left join brands b on b.id = p.brands_id
+      where s.id=$1
+      order by p.categories_id, p.name`,
+      [shops_id]
+    );
+    if (itemList.rowCount === 0)
+      return res.status(404).send("No Items found in Shop");
+
+    return res.status(200).send(itemList.rows);
+  } catch (error) {
+    console.log(error)
+    return res.status(500).send("Internal server error");
+  }
+});
 
 // purchase route
 router.post("/purchase", async (req, res) => {
@@ -18,13 +48,13 @@ router.post("/purchase", async (req, res) => {
         // check item exists
         const checkList = await pool.query(
           `SELECT * FROM purchase 
-          WHERE item = $1 
-          AND shop = $2 
+          WHERE products_id = $1 
+          AND shops_id = $2 
           AND purchase_date = $3`,
           [products_id, shop_id, purchase_date]
         );
         if (checkList.rowCount > 0) {
-          existLog.push({ item });
+          existLog.push({ products_id });
           continue;
         }
         // insert item
@@ -35,7 +65,7 @@ router.post("/purchase", async (req, res) => {
         const saved = await pool.query(
           `INSERT INTO purchase( shop_id, products_id, price, qty_case, qty_item, purchase_date) 
           VALUES ( $1, $2, $3, $4, $5 ) 
-          RETURNING item`,
+          RETURNING products_id`,
           [shop_id, products_id, itemList.rows[0].purchase_price, qty_case, qty_item, purchase_date]
         );
         if (saved.rowCount) {
@@ -60,6 +90,7 @@ router.post("/purchase", async (req, res) => {
           );
         }
       } catch (err) {
+        console.log(error);
         errLog.push({ item });
         return;
       }
