@@ -150,10 +150,10 @@ CREATE TABLE domains (
 CREATE TABLE stock (
     id SERIAL PRIMARY KEY,
     products_id INTEGER NOT NULL,
-    shop_id INTEGER NOT NULL,
+    shops_id INTEGER NOT NULL,
     stock INTEGER NOT NULL,
     CONSTRAINT products_id FOREIGN KEY(products_id) REFERENCES products(id) ON DELETE SET NULL,
-    CONSTRAINT shop_id FOREIGN KEY(shop_id) REFERENCES shops(id) ON DELETE SET NULL
+    CONSTRAINT shops_id FOREIGN KEY(shops_id) REFERENCES shops(id) ON DELETE SET NULL
 );
 
 -- Create purchase table
@@ -161,10 +161,11 @@ CREATE TABLE purchase (
     id SERIAL PRIMARY KEY,
     products_id INTEGER NOT NULL REFERENCES products(id),
     shops_id INTEGER NOT NULL REFERENCES shops(id),
-    price INTEGER NOT NULL,
+    price DECIMAL(10, 2) NOT NULL,
     qty_case integer NOT NULL,
     qty_item integer NOT NULL,
-    purchase_date date NOT NULL,
+    purchase_date date NOT NULL DEFAULT CURRENT_DATE,
+    inserted_at DATE DEFAULT CURRENT_DATE NOT NULL,
     CONSTRAINT products_id FOREIGN KEY(products_id) REFERENCES products(id) ON DELETE SET NULL,
     CONSTRAINT shops_id FOREIGN KEY(shops_id) REFERENCES shops(id) ON DELETE SET NULL
 );
@@ -178,3 +179,35 @@ values('shop1','dfs344sd','mrp2'),
 insert into products( name, brands_id, categories_id, sizes_id, barcode, per_case, purchase_price, case_price, mrp, discount, mrp1, mrp2, mrp3, mrp4) 
  VALUES('BECKS ICE PREMIUM 500ML CAN',1,1,11,'1234567890',24,62.00,1630.00,70.00,0.7,70.00,72.00,75.00,75.00),
     ('BECKS ICE PREMIUM 650ML',1,1,12,'1234567891',12,131.82,1581.84,145.00,1.45,145.00,150.00,150.00,150.00);
+
+
+-- CREATE sales table
+CREATE TABLE IF NOT EXISTS sales (
+    id SERIAL PRIMARY KEY,
+    sales_date DATE DEFAULT CURRENT_DATE,
+    shops_id INTEGER NOT NULL,
+    products_id INTEGER NOT NULL,
+    qty INTEGER NOT NULL,
+    price DECIMAL(10, 2) NOT NULL,
+    qty_cash DECIMAL(10, 2),
+    qty_card DECIMAL(10, 2),
+    qty_upi DECIMAL(10, 2),
+    inserted_at DATE DEFAULT CURRENT_DATE NOT NULL,
+    CONSTRAINT products_id FOREIGN KEY(products_id) REFERENCES products(id) ON DELETE SET NULL,
+    CONSTRAINT shops_id FOREIGN KEY(shops_id) REFERENCES shops(id) ON DELETE SET NULL
+);
+
+-- CREATE invoices table
+CREATE TABLE IF NOT EXISTS invoices (
+    id SERIAL PRIMARY KEY,
+    invoice_date DATE DEFAULT CURRENT_DATE,
+    invoice_number VARCHAR(255) UNIQUE NOT NULL,
+    shops_id INTEGER NOT NULL,
+    products_ids TEXT [] NOT NULL,
+    qtys NUMERIC [] NOT NULL,
+    prices NUMERIC [] NOT NULL,
+    total DECIMAL(10, 2) NOT NULL,
+    transaction_type VARCHAR(255) DEFAULT 'cash' NOT NULL,
+    inserted_at DATE DEFAULT CURRENT_DATE NOT NULL,
+    CONSTRAINT shops_id FOREIGN KEY(shops_id) REFERENCES shops(id) ON DELETE SET NULL
+);
