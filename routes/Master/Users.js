@@ -99,4 +99,9 @@ router.post("/register", verifyAdmin, async (req, res) => {
   }
 });
 
+// Create a new user
+router.post("/domains", verifyAdmin, async (req, res) => {
+  res.send("/domains");
+});
+
 module.exports = router;

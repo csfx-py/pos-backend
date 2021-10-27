@@ -134,7 +134,7 @@ CREATE TABLE domains (
     shops_id integer NOT NULL,
     CONSTRAINT users_id FOREIGN KEY(users_id) REFERENCES users(id) ON DELETE
     SET NULL,
-        CONSTRAINT shops_id FOREIGN KEY(shops_id) REFERENCES shops(id) ON DELETE
+    CONSTRAINT shops_id FOREIGN KEY(shops_id) REFERENCES shops(id) ON DELETE
     SET NULL
 );
 -- Create stock table
