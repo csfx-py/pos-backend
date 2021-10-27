@@ -1,12 +1,12 @@
 const jwt = require("jsonwebtoken");
 
 module.exports = (user, secret, exp) => {
+  const { name, roles_id, is_priviledged } = user;
   console.log(user);
-  const { name, role, is_priviledged } = user;
   return jwt.sign(
     {
       name,
-      role,
+      roles_id,
       is_priviledged,
     },
     secret,

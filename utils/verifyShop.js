@@ -7,7 +7,7 @@ module.exports = (req, res, next) => {
   try {
     const { roles_id } = jwt.verify(token, process.env.ACCESS_TOKEN_SEC);
 
-    if (roles_id !== 1) res.status(401).send("Unauthorized");
+    if (roles_id !== 2) res.status(401).send("Unauthorized");
 
     next();
   } catch (err) {
