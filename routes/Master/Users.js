@@ -22,9 +22,7 @@ router.post("/register-admin", verifyMaster, async (req, res) => {
 
   try {
     //   check exists
-    const userList = await pool.query(
-      `SELECT * FROM users WHERE role = 'admin'`
-    );
+    const userList = await pool.query(`SELECT * FROM users WHERE roles_id = 1`);
     if (userList.rowCount > 0)
       return res.status(400).send("Admin already exists");
 
@@ -35,10 +33,10 @@ router.post("/register-admin", verifyMaster, async (req, res) => {
     //   insert user
     const user = await pool.query(
       `INSERT INTO users (
-      name, password, role, is_priviledged
+      name, password, roles_id, is_priviledged
       ) VALUES (
-        $1, $2, 'admin', true
-      ) returning name, role`,
+        $1, $2, 1, true
+      ) returning name, roles_id`,
       [name, hashPass]
     );
 
@@ -62,7 +60,7 @@ router.post("/register-admin", verifyMaster, async (req, res) => {
 
 // Create a new user
 router.post("/register", verifyAdmin, async (req, res) => {
-  const { name, role, password, is_priviledged } = req.body;
+  const { name, roles_id, password, is_priviledged } = req.body;
 
   try {
     //   check exists
@@ -78,11 +76,11 @@ router.post("/register", verifyAdmin, async (req, res) => {
     //   insert user
     const user = await pool.query(
       `INSERT INTO users (
-        name, password, role, is_priviledged
+        name, password, roles_id, is_priviledged
         ) VALUES (
           $1, $2, $3, $4
-        ) returning name, role`,
-      [name, hashPass, role, is_priviledged || false]
+        ) returning name, roles_id`,
+      [name, hashPass, roles_id || 2, is_priviledged || false]
     );
 
     res
