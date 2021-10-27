@@ -185,6 +185,7 @@ insert into products( name, brands_id, categories_id, sizes_id, barcode, per_cas
 CREATE TABLE IF NOT EXISTS sales (
     id SERIAL PRIMARY KEY,
     sales_date DATE DEFAULT CURRENT_DATE,
+    sales_no INTEGER UNIQUE NOT NULL,
     shops_id INTEGER NOT NULL,
     products_id INTEGER NOT NULL,
     users_id INTEGER NOT NULL,
@@ -204,6 +205,7 @@ CREATE TABLE IF NOT EXISTS invoices (
     id SERIAL PRIMARY KEY,
     invoice_date DATE DEFAULT CURRENT_DATE,
     invoice_number VARCHAR(255) UNIQUE NOT NULL,
+    sales_no INTEGER UNIQUE NOT NULL,
     shops_id INTEGER NOT NULL,
     users_id INTEGER NOT NULL,
     products_ids TEXT [] NOT NULL,

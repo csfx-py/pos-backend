@@ -118,13 +118,13 @@ router.post("/sale", async (req, res) => {
   const data = req.body;
   console.log(req.body);
   const brokenData = await splitInvoice(data.items);
-  console.log(" broken data :  \n ", brokenData);
+  console.log("\n\nbroken data :  \n ", brokenData);
+
+  let doesNotExistLog = [];
+  let saveLog = [];
+  let errLog = [];
   res.send('kj');
 });/*
-let doesNotExistLog = [];
-let saveLog = [];
-let errLog = [];
-console.log(data);
 if (data && data.length > 0) {
   try {
     const { shops_id, user_id, products_ids, qtys, txn_type } = data;
