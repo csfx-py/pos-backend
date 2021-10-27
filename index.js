@@ -23,6 +23,7 @@ const masterUsersRoutes = require("./routes/Master/Users");
 const masterItemsRoutes = require("./routes/Master/Items");
 const authRoutes = require("./routes/Auth/");
 const shopItemsRoutes = require("./routes/Shop/Items");
+
 app.use("/master/user", masterUsersRoutes);
 app.use("/master/items", masterItemsRoutes);
 app.use("/shop", shopItemsRoutes);
