@@ -207,7 +207,7 @@ CREATE TABLE IF NOT EXISTS invoices (
     users_id INTEGER NOT NULL,
     products_id INTEGER NOT NULL,
     qty INTEGER NOT NULL,
-    prices DECIMAL(10, 2) NOT NULL,
+    price DECIMAL(10, 2) NOT NULL,
     total DECIMAL(10, 2) NOT NULL,
     transaction_type VARCHAR(255) DEFAULT 'cash' NOT NULL,
     inserted_at DATE DEFAULT CURRENT_DATE NOT NULL,

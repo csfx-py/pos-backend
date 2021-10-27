@@ -115,12 +115,30 @@ router.post("/purchase", async (req, res) => {
 
 // purchase route
 router.post("/sale", async (req, res) => {
+  //   data featched:{
+  //     "shops_id":1,
+  //     "users_id":1,
+  //     "transaction_type":"Cash",
+  //     "items":[
+  //         {
+  //             "products_id":1,
+  //             "qty":5,
+  //             "price":1000
+  //         },
+  //         {
+  //             "products_id":2,
+  //             "qty":8,
+  //             "price":980
+  //         }
+  //     ]
+  // }
+
   const data = req.body;
   // console.log(req.body);
   let saveLog = [];
   let errLog = [];
   // console.log(data.length);
-  const { shops_id, user_id, items } = data;
+  const { shops_id, users_id, transaction_type, items } = data;
   // console.log(items);
   console.log('\n\n\n items:\n ', items);
   if (data && items.length > 0) {
@@ -130,12 +148,28 @@ router.post("/sale", async (req, res) => {
       const brokenData = await splitInvoice(items);
       // console.log("\n\nbroken data : \n\n", brokenData);
       // console.log("\n\nbroken data length : \n\n", brokenData.length);
+
       for (i = 0; i < brokenData.length; i++) {
         const data = brokenData[i];
         // console.log(`\n\nbroken loop ${i} : \n`, brokenData[i]);
+        const invoiceList = await pool.query(
+          `SELECT * FROM invoices
+          WHERE invoice_number = $1 and
+          invoice_date = CURRENT_DATE`,
+          [shops_id]
+        );
+        // invoice ID in formate yyyy-mm-dd-shop-invoice_no
+        const invoice_number = `${new Date().toISOString().slice(0, 10)}-${shop}-${invoiceList.rowCount + 1}`;
+
         for (j = 0; j < data.length; j++) {
           // console.log(`\n\tbroken Data ${j} : \n\t`, data[j]);
           // saveLog.push(data[j].products_id);
+          const invoiceSaved = await pool.query(
+            `INSERT INTO invoices( sales_no, invoice_number, shops_id, users_id, products_id, qty, prices, total, transaction_type)
+            VALUES ( $1, $2, $3, $4, $5, $6, $7, $8, $9 )
+            RETURNING sales_no`,
+            [sales_no, invoice_number, shops_id, users_id, data[j].products_id, data[j].qty, data[j].price, data[j].total, transaction_type]
+          );
         }
       }
     }
