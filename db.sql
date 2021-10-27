@@ -185,10 +185,8 @@ insert into products( name, brands_id, categories_id, sizes_id, barcode, per_cas
 CREATE TABLE IF NOT EXISTS sales (
     id SERIAL PRIMARY KEY,
     sales_date DATE DEFAULT CURRENT_DATE,
-    sales_no INTEGER UNIQUE NOT NULL,
     shops_id INTEGER NOT NULL,
     products_id INTEGER NOT NULL,
-    users_id INTEGER NOT NULL,
     qty INTEGER NOT NULL,
     price DECIMAL(10, 2) NOT NULL,
     qty_cash DECIMAL(10, 2),
@@ -196,16 +194,15 @@ CREATE TABLE IF NOT EXISTS sales (
     qty_upi DECIMAL(10, 2),
     inserted_at DATE DEFAULT CURRENT_DATE NOT NULL,
     CONSTRAINT products_id FOREIGN KEY(products_id) REFERENCES products(id) ON DELETE SET NULL,
-    CONSTRAINT users_id FOREIGN KEY(users_id) REFERENCES users(id) ON DELETE SET NULL,
     CONSTRAINT shops_id FOREIGN KEY(shops_id) REFERENCES shops(id) ON DELETE SET NULL
 );
 
 -- CREATE invoices table
 CREATE TABLE IF NOT EXISTS invoices (
     id SERIAL PRIMARY KEY,
+    sales_no INTEGER,
     invoice_date DATE DEFAULT CURRENT_DATE,
     invoice_number VARCHAR(255) UNIQUE NOT NULL,
-    sales_no INTEGER UNIQUE NOT NULL,
     shops_id INTEGER NOT NULL,
     users_id INTEGER NOT NULL,
     products_ids TEXT [] NOT NULL,

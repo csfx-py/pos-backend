@@ -116,79 +116,99 @@ router.post("/purchase", async (req, res) => {
 // purchase route
 router.post("/sale", async (req, res) => {
   const data = req.body;
-  console.log(req.body);
-  const brokenData = await splitInvoice(data.items);
-  console.log("\n\nbroken data :  \n ", brokenData);
-
-  let doesNotExistLog = [];
+  // console.log(req.body);
   let saveLog = [];
   let errLog = [];
-  res.send('kj');
-});/*
-if (data && data.length > 0) {
-  try {
-    const { shops_id, user_id, products_ids, qtys, txn_type } = data;
-    //begin transaction
-    await pool.query('BEGIN');
-    //sales insert
-    for (i = 0; i < products_ids.length; i++) {
-      const products_id = products_ids[i];
-      const qty = qtys[i];
-      // const price_sold = total_sub[i];  fetch price to use and its value
-      // check item exists
-
-      const priceList = await pool.query(
-        `select * from shops where id=$1`,
-        [shops_id]
-      );
-      const price = priceList.rows[0].price_to_use;
-
-
-      const check_stock = await pool.query(
-        `SELECT s.stock, p.${price} as price FROM stock s inter join products p on p.id=s.products_id
-        WHERE products_id = $1
-        AND shops_id = $2`,
-        [products_id, shops_id]
-      );
-      if (check_stock.rows[0].stock < qty) {
-        doesNotExistLog.push({ products_id });
-        continue;
+  // console.log(data.length);
+  const { shops_id, user_id, items } = data;
+  // console.log(items);
+  console.log('\n\n\n items:\n ', items);
+  if (data && items.length > 0) {
+    try {
+      //begin transaction
+      await pool.query('BEGIN');
+      const brokenData = await splitInvoice(items);
+      // console.log("\n\nbroken data : \n\n", brokenData);
+      // console.log("\n\nbroken data length : \n\n", brokenData.length);
+      for (i = 0; i < brokenData.length; i++) {
+        const data = brokenData[i];
+        // console.log(`\n\nbroken loop ${i} : \n`, brokenData[i]);
+        for (j = 0; j < data.length; j++) {
+          // console.log(`\n\tbroken Data ${j} : \n\t`, data[j]);
+          // saveLog.push(data[j].products_id);
+        }
       }
-      // insert sales item
-      console.log("3");
-      const sals_saved = await pool.query(
-        `INSERT INTO sales( sales_date, shops_id, products_id, qty, price, qty_cash, qty_card, qty_upi ) 
-        VALUES ( $1, $2, $3, $4, $5, $6, $7 ) RETURNING id`,
-        [sale_date, shops_id, products_id, check_stock.rows[0].price, qty, qty_cash, qty_card, qty_upi]
-      );
-      if (sals_saved.rowCount) {
-        console.log("5");
-        saveLog.push({ products_id });
-        const newQty = check_stock.rows[0].stock - qty;
-        const updateActive = await pool.query(
-          `UPDATE stock set stock = $1 WHERE products_id = $2 AND shops_id = $3`,
-          [newQty, products_id, shops_id]
-        );
-      }
-      console.log("4");
     }
-    await pool.query('COMMIT');
-    console.log("10");
-  } catch (err) {
-    console.log(err);
-    console.log("11");
-    await pool.query('ROLLBACK');
-    errLog.push({ products_id });
-    return;
+    catch (err) {
+      console.log(err);
+      errLog.push({ shops_id });
+      return;
+    }
   }
-  console.log("12");
   return res.status(200).send({
-    exist: existLog,
     save: saveLog,
     err: errLog,
   });
-}
-return res.status(400).send("no data provided");
+});/*
+      //begin transaction
+      await pool.query('BEGIN');
+      //sales insert
+      for (i = 0; i < products_ids.length; i++) {
+        const products_id = products_ids[i];
+        const qty = qtys[i];
+        // const price_sold = total_sub[i];  fetch price to use and its value
+        // check item exists
+
+        const priceList = await pool.query(
+          `select * from shops where id=$1`,
+          [shops_id]
+        );
+        const price = priceList.rows[0].price_to_use;
+        const check_stock = await pool.query(
+          `SELECT s.stock, p.${price} as price FROM stock s inter join products p on p.id=s.products_id
+        WHERE products_id = $1
+        AND shops_id = $2`,
+          [products_id, shops_id]
+        );
+        if (check_stock.rows[0].stock < qty) {
+          doesNotExistLog.push({ products_id });
+          continue;
+        }
+        // insert sales item
+        console.log("3");
+        const sals_saved = await pool.query(
+          `INSERT INTO sales( sales_date, shops_id, products_id, qty, price, qty_cash, qty_card, qty_upi ) 
+        VALUES ( $1, $2, $3, $4, $5, $6, $7 ) RETURNING id`,
+          [sale_date, shops_id, products_id, check_stock.rows[0].price, qty, qty_cash, qty_card, qty_upi]
+        );
+        if (sals_saved.rowCount) {
+          console.log("5");
+          saveLog.push({ products_id });
+          const newQty = check_stock.rows[0].stock - qty;
+          const updateActive = await pool.query(
+            `UPDATE stock set stock = $1 WHERE products_id = $2 AND shops_id = $3`,
+            [newQty, products_id, shops_id]
+          );
+        }
+        console.log("4");
+      }
+      await pool.query('COMMIT');
+      console.log("10");
+    } catch (err) {
+      console.log(err);
+      console.log("11");
+      await pool.query('ROLLBACK');
+      errLog.push({ products_id });
+      return;
+    }
+    console.log("12");
+    return res.status(200).send({
+      exist: existLog,
+      save: saveLog,
+      err: errLog,
+    });
+  }
+  return res.status(400).send("no data provided");
 });
 /*
 //console.log(data);
