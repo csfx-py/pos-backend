@@ -237,7 +237,7 @@ CREATE TABLE IF NOT EXISTS sales (
 -- CREATE invoices table
 CREATE TABLE IF NOT EXISTS invoices (
     id SERIAL PRIMARY KEY,
-    sales_no INTEGER,
+    sales_no VARCHAR(255) NOT NULL,
     invoice_date DATE DEFAULT CURRENT_DATE,
     invoice_number VARCHAR(255) UNIQUE NOT NULL,
     shops_id INTEGER NOT NULL,
