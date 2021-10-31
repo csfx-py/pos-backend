@@ -239,7 +239,7 @@ CREATE TABLE IF NOT EXISTS invoices (
     id SERIAL PRIMARY KEY,
     sales_no VARCHAR(255) NOT NULL,
     invoice_date DATE DEFAULT CURRENT_DATE,
-    invoice_number VARCHAR(255) UNIQUE NOT NULL,
+    invoice_number VARCHAR(255) NOT NULL,
     shops_id INTEGER NOT NULL,
     users_id INTEGER NOT NULL,
     products_id INTEGER NOT NULL,
