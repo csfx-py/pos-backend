@@ -224,15 +224,16 @@ CREATE TABLE IF NOT EXISTS sales (
     products_id INTEGER NOT NULL,
     qty INTEGER NOT NULL,
     price DECIMAL(10, 2) NOT NULL,
-    qty_cash DECIMAL(10, 2),
-    qty_card DECIMAL(10, 2),
-    qty_upi DECIMAL(10, 2),
+    qty_cash INTEGER,
+    qty_card INTEGER,
+    qty_upi INTEGER,
     inserted_at DATE DEFAULT CURRENT_DATE NOT NULL,
     CONSTRAINT products_id FOREIGN KEY(products_id) REFERENCES products(id) ON DELETE
     SET NULL,
         CONSTRAINT shops_id FOREIGN KEY(shops_id) REFERENCES shops(id) ON DELETE
     SET NULL
 );
+
 -- CREATE invoices table
 CREATE TABLE IF NOT EXISTS invoices (
     id SERIAL PRIMARY KEY,

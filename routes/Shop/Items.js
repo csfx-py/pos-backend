@@ -140,12 +140,12 @@ router.post("/sale", async (req, res) => {
   //     ]
   // }
 
-  const data = req.body;
+  const ta = req.body;
   // console.log(req.body);
   let saveLog = [];
   let errLog = [];
   // console.log(data.length);
-  const { shops_id, users_id, transaction_type, items } = data;
+  const { shops_id, users_id, transaction_type, items } = ta;
   // console.log(items);
   console.log("\n\n\n items:\n ", items);
   if (data && items.length > 0) {
@@ -189,6 +189,62 @@ router.post("/sale", async (req, res) => {
               transaction_type,
             ]
           );
+          if (invoiceSaved.rowCount) {
+            console.log("5");
+            saveLog.push(data[j].products_id);
+            const activeQty = await pool.query(
+              `SELECT stock FROM stock WHERE products_id = $1 AND shops_id = $2`,
+              [data[j].products_id, shops_id]
+            );
+            const salesQty = await pool.query(
+              `SELECT qty, qty_cash, qty_card, qty_upi FROM sales WHERE products_id = $1 AND shops_id = $2 and sales_date=$3`,
+              [data[j].products_id, shops_id, Date()]
+            );
+            if (activeQty.rowCount) {
+              const newQty = activeQty.rows[0].stock - data[j].qty;
+              const updatestock = await pool.query(
+                `UPDATE stock set stock = $1 WHERE products_id = $2 AND shops_id = $3`,
+                [newQty, data[j].products_id, shops_id]
+              );
+            } else {
+              const addActive = await pool.query(
+                `INSERT INTO stock( shops_id, products_id, stock )
+                VALUES ( $1, $2, $3 )`,
+                [shops_id, data[j].products_id, data[j].qty]
+              );
+            }
+
+            //
+            if (salesQty.rowCount) {
+              const newQty = salesQty.rows[0].qty + data[j].qty;
+              if (transaction_type == "Cash") {
+                const newCashQty = salesQty.rows[0].qty_cash + data[j].qty;
+                const updateSales = await pool.query(
+                  `UPDATE sales set qty = $1 and qty_cash=$2 WHERE products_id = $3 AND shops_id = $4`,
+                  [newQty, newCashQty, data[j].products_id, shops_id, Date()]
+                );
+              } else if (transaction_type == "Card") {
+                const newCardQty = salesQty.rows[0].qty_card + data[j].qty;
+                const updateSales = await pool.query(
+                  `UPDATE sales set qty = $1 and qty_card=$2 WHERE products_id = $3 AND shops_id = $4`,
+                  [newQty, newCardQty, data[j].products_id, shops_id, Date()]);
+              } else if (transaction_type == "UPI") {
+                const newUPIQty = salesQty.rows[0].qty_upi + data[j].qty;
+                const updateSales = await pool.query(
+                  `UPDATE sales set qty = $1 and qty_upi = $2WHERE products_id = $3 AND shops_id = $4`,
+                  [newQty, newUPIQty, data[j].products_id, shops_id, Date()]);
+              }
+
+            } else {
+              const addSales = await pool.query(
+                `INSERT INTO stock( sales_date, shops_id, products_id, qty, price, qty_cash, qty_card, qty_upi)
+            VALUES ( $1, $2, $3 )`,
+                [shops_id, data[j].products_id, data[j].qty]
+              );
+            }
+            console.log("10");
+            await pool.query("COMMIT");
+          }
         }
       }
     } catch (err) {
