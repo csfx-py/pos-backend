@@ -46,7 +46,7 @@ router.get("/items", async (req, res) => {
   try {
     const itemList = await pool.query(
       `SELECT * FROM products 
-      ORDER BY category, name`
+      ORDER BY categories_id, name`
     );
     if (itemList.rowCount === 0)
       return res.status(404).send("Master items list empty");
