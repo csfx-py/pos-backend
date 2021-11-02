@@ -34,6 +34,31 @@ router.get("/items", async (req, res) => {
   }
 });
 
+router.post("/items", async (req, res) => {
+  const data = req.body;
+  if (data && data.length > 0) {
+    for (i = 0; i < data.length; i++) {
+      const { name, brands_id, categories_id, sizes_id, barcode, purchase_price, case_qty, case_price, mrp, mrp1, mrp2, mrp3, mrp4 } = data[i];
+      try {
+        // begin transaction
+        await pool.query("BEGIN");
+        const itemList = await pool.query(
+          `insert into products( name, brands_id, categories_id, sizes_id,barcode, per_case, purchase_price, case_price, mrp, discount, mrp1, mrp2, mrp3, mrp4 )
+          VALUES( $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13 )`,
+          [name, brands_id, categories_id, sizes_id, barcode, purchase_price, case_qty, case_price, mrp, mrp1, mrp2, mrp3, mrp4]
+        );
+        if (itemList.rowCount)
+          return res.status(404).send("No Items found in Shop");
+
+        return res.status(200).send(itemList.rows);
+      } catch (error) {
+        console.log(error);
+        return res.status(500).send("Internal server error");
+      }
+    }
+  }
+});
+
 // purchase route
 router.post("/purchase", async (req, res) => {
   const data = req.body;
