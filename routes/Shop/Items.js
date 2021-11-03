@@ -145,7 +145,7 @@ router.post("/purchase", async (req, res) => {
   return res.status(400).send("no data provided");
 });
 
-// purchase route
+// sales route
 router.post("/sale", async (req, res) => {
   //   data featched:{
   //     "shops_id":1,
@@ -176,6 +176,22 @@ router.post("/sale", async (req, res) => {
   // console.log(items);
   console.log("\n\n\n1 items:\n ", items);
   if (fdata && items.length > 0) {
+    try {
+      for (i = 0; i < items.length; i++) {
+        const { products_id, qty, price } = items[i];
+        const itemList = await pool.query(
+          `SELECT stock FROM stock WHERE products_id = $1 and shops_id = $2`,
+          [products_id, shops_id]
+        );
+        if (itemList.row[0].stock < qty) {
+          errLog.push({ products_id });
+          return res.status(404).send("Not enough stock");
+        }
+      }
+    } catch (err) {
+      console.log(err);
+      return res.status(100).send("No data was retrieved, updated, or deleted.");
+    }
     try {
       //begin transaction
       await pool.query("BEGIN");
@@ -254,7 +270,7 @@ router.post("/sale", async (req, res) => {
               const newQty = salesQty.rows[0].qty + data[j].qty;
               console.log("10 newQty: ", newQty);
               if (transaction_type == "Cash") {
-                const newCashQty = salesQty.rows[0].qty_cash + data[j].qty;
+                const newCashQty = parseInt(salesQty.rows[0].qty_cash + data[j].qty);
                 console.log("15 newCashQty: ", newCashQty);
                 const updateSales = await pool.query(
                   `UPDATE sales set qty = $1, qty_cash=$2 WHERE products_id = $3 AND shops_id = $4 AND sales_date=CURRENT_DATE`,
@@ -262,14 +278,14 @@ router.post("/sale", async (req, res) => {
                 );
               } else if (transaction_type == "Card") {
                 console.log("11 ");
-                const newCardQty = salesQty.rows[0].qty_card + data[j].qty;
+                const newCardQty = parseInt(salesQty.rows[0].qty_card + data[j].qty);
                 const updateSales = await pool.query(
                   `UPDATE sales set qty = $1, qty_card=$2 WHERE products_id = $3 AND shops_id = $4 AND sales_date=CURRENT_DATE`,
                   [newQty, newCardQty, data[j].products_id, shops_id]);
               } else if (transaction_type == "UPI") {
-                const newUPIQty = salesQty.rows[0].qty_upi + data[j].qty;
+                const newUPIQty = parseInt(salesQty.rows[0].qty_upi + data[j].qty);
                 const updateSales = await pool.query(
-                  `UPDATE sales set qty = $1, qty_upi = $2WHERE products_id = $3 AND shops_id = $4 AND sales_date=CURRENT_DATE`,
+                  `UPDATE sales set qty = $1, qty_upi = $2 WHERE products_id = $3 AND shops_id = $4 AND sales_date=CURRENT_DATE`,
                   [newQty, newUPIQty, data[j].products_id, shops_id]);
               }
             } else {
