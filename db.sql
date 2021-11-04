@@ -169,53 +169,10 @@ values('shop1', 'dfs344sd', 'mrp2'),
     ('shop2', 'dasf3443fsd', 'mrp3'),
     ('shop3', 'sfg4dfg45db', 'mrp3');
 insert into products(
-        name,
-        brands_id,
-        categories_id,
-        sizes_id,
-        barcode,
-        per_case,
-        purchase_price,
-        case_price,
-        mrp,
-        discount,
-        mrp1,
-        mrp2,
-        mrp3,
-        mrp4
-    )
-VALUES(
-        'BECKS ICE PREMIUM 500ML CAN',
-        1,
-        1,
-        11,
-        '1234567890',
-        24,
-        62.00,
-        1630.00,
-        70.00,
-        0.7,
-        70.00,
-        72.00,
-        75.00,
-        75.00
-    ),
-    (
-        'BECKS ICE PREMIUM 650ML',
-        1,
-        1,
-        12,
-        '1234567891',
-        12,
-        131.82,
-        1581.84,
-        145.00,
-        1.45,
-        145.00,
-        150.00,
-        150.00,
-        150.00
-    );
+    name, brands_id, categories_id, sizes_id, barcode, case_qty, purchase_price, case_price, mrp, discount, mrp1, mrp2, mrp3, mrp4 )
+VALUES( 'BECKS ICE PREMIUM 500ML CAN', 1, 1, 11, '1234567890', 24, 62.00, 1630.00, 70.00, 0.7, 70.00, 72.00, 75.00, 75.00 ),
+      ( 'BECKS ICE PREMIUM 650ML', 1, 1, 12, '1234567891', 12, 131.82, 1581.84, 145.00, 1.45, 145.00, 150.00, 150.00, 150.00 );
+
 -- CREATE sales table
 CREATE TABLE IF NOT EXISTS sales (
     id SERIAL PRIMARY KEY,
