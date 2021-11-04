@@ -59,6 +59,73 @@ router.post("/items", async (req, res) => {
   }
 });
 
+// specific products rout
+router.get("/product/:id", async (req, res) => {
+  console.log(req.params);
+  const { id } = req.params;
+  try {
+    const itemList = await pool.query(`select * from products where id=$1`, [id]);
+    if (itemList.rowCount === 1)
+      return res.status(200).send(itemList.rows);
+    return res.status(404).send("No Items found in Shop");
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send("Internal server error");
+  }
+});
+
+// products rout
+router.get("/products", async (req, res) => {
+  const { shops_id } = req.query;
+  try {
+    const itemList = await pool.query(`select * from products`);
+    if (itemList.rowCount === 0)
+      return res.status(404).send("No Items found in Shop");
+
+    return res.status(200).send(itemList.rows);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send("Internal server error");
+  }
+})
+
+// insert products rout
+router.post("/products", async (req, res) => {
+  let existLog = [];
+  let saveLog = [];
+  let errLog = [];
+  const data = req.body;
+  if (data && data.length > 0) {
+    for (i = 0; i < data.length; i++) {
+      const { name, brands_id, categories_id, sizes_id, barcode, purchase_price, case_qty, case_price, discount, mrp, mrp1, mrp2, mrp3, mrp4 } = data[i];
+      try {
+        // begin transaction
+        await pool.query("BEGIN");
+        const itemList = await pool.query(
+          `insert into products( name, brands_id, categories_id, sizes_id, barcode, per_case, purchase_price, case_price, mrp, discount, mrp1, mrp2, mrp3, mrp4 )
+          VALUES( $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14 ) return id`,
+          [name, brands_id, categories_id, sizes_id, barcode, purchase_price, case_qty, case_price, discount, mrp, mrp1, mrp2, mrp3, mrp4]
+        );
+        if (itemList.rowCount) {
+          saveLog.push({ products_id });
+          await pool.query("COMMIT");
+        } else {
+        }
+      } catch (error) {
+        console.log(error);
+        await pool.query("ROLLBACK");
+        errLog.push({ products_id });
+        return res.status(500).send("Internal server error");
+      }
+    } return res.status(200).send({
+      exist: existLog,
+      save: saveLog,
+      err: errLog,
+    });
+  }
+});
+
+
 // purchase route
 router.post("/purchase", async (req, res) => {
   const data = req.body;
@@ -103,7 +170,6 @@ router.post("/purchase", async (req, res) => {
             purchase_date,
           ]
         );
-
         if (saved.rowCount) {
           console.log("5");
           saveLog.push({ products_id });
@@ -169,6 +235,7 @@ router.post("/sale", async (req, res) => {
   // console.log(req.body);
   let saveLog = [];
   let errLog = [];
+  let sales_no = "";
   let qty_cash = 0, qty_card = 0, qty_upi = 0;
   const date = new Date();
   // console.log(data.length);
@@ -201,7 +268,8 @@ router.post("/sale", async (req, res) => {
         inserted_at = CURRENT_DATE`,
         [shops_id]
       );
-      const sales_no = `${date.getFullYear()}${date.getMonth()}${date.getDate()}${sales_count.rows[0].count + 1}`;
+      sales_no = `${date.getFullYear()}${date.getMonth()}${date.getDate()}${sales_count.rows[0].count + 1}`;
+
       const brokenData = await splitInvoice(items);
       // console.log("\n\nbroken data : \n\n", brokenData);
       // console.log("\n\nbroken data length : \n\n", brokenData.length);
@@ -323,6 +391,7 @@ router.post("/sale", async (req, res) => {
   return res.status(200).send({
     save: saveLog,
     err: errLog,
+    sales_no: sales_no,
   });
 });
 
