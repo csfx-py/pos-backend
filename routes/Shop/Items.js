@@ -95,26 +95,33 @@ router.post("/products", async (req, res) => {
   let saveLog = [];
   let errLog = [];
   const data = req.body;
+  console.log("1 body data: ", req.body);
   if (data && data.length > 0) {
     for (i = 0; i < data.length; i++) {
+      console.log("2 body data: ", data[i]);
       const { name, brands_id, categories_id, sizes_id, barcode, purchase_price, case_qty, case_price, discount, mrp, mrp1, mrp2, mrp3, mrp4 } = data[i];
       try {
         // begin transaction
         await pool.query("BEGIN");
         const itemList = await pool.query(
           `insert into products( name, brands_id, categories_id, sizes_id, barcode, per_case, purchase_price, case_price, mrp, discount, mrp1, mrp2, mrp3, mrp4 )
-          VALUES( $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14 ) return id`,
+          VALUES( $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14 ) RETURNING id`,
           [name, brands_id, categories_id, sizes_id, barcode, purchase_price, case_qty, case_price, discount, mrp, mrp1, mrp2, mrp3, mrp4]
         );
+        console.log(itemList.rows[0].id);
         if (itemList.rowCount) {
-          saveLog.push({ products_id });
+          console.log("3 ", itemList.rows[0]);
+          let id = itemList.rows[0].id;
+          saveLog.push({ id });
           await pool.query("COMMIT");
         } else {
+          errLog.push({ id });
+          await pool.query("ROLLBACK");
         }
       } catch (error) {
         console.log(error);
         await pool.query("ROLLBACK");
-        errLog.push({ products_id });
+        errLog.push({ name });
         return res.status(500).send("Internal server error");
       }
     } return res.status(200).send({
