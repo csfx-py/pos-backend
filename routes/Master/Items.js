@@ -192,7 +192,7 @@ router.post("/xl-products", async (req, res) => {
         const insertProduct = await pool.query(
           `insert into products( name, brands_id, categories_id, sizes_id, barcode, per_case, purchase_price, case_price, mrp, discount, mrp1, mrp2, mrp3, mrp4 )
           VALUES( $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14 ) RETURNING id`,
-          [name, brands.rows[0].id || null, categories.rows[0].id, sizes.rows[0].id, barcode || null, purchase_price, case_qty, case_price, discount || null, mrp || null, mrp1 || null, mrp2 || null, mrp3 || null, mrp4 || null]
+          [name, brands.rows[0].id || null, categories.rows[0].id, sizes.rows[0].id, barcode || null, purchase_price, case_qty, case_price, discount || null, mrp, mrp1 || null, mrp2 || null, mrp3 || null, mrp4 || null]
         );
         console.log(insertProduct.rows[0].id);
         if (insertProduct.rowCount) {
