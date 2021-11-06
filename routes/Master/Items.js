@@ -52,7 +52,6 @@ router.get("/items", async (req, res) => {
       Left join categories c on c.id = p.categories_id
       Left join sizes si on si.id = p.sizes_id
       Left join brands b on b.id = p.brands_id
-      where s.id=$1
       order by p.categories_id, p.name`,);
     if (itemList.rowCount === 0)
       return res.status(404).send("Master items list empty");
