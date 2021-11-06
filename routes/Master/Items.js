@@ -18,7 +18,7 @@ router.get("/brand", async (req, res) => {
 router.get("/category", async (req, res) => {
   try {
     const categoryList = await pool.query(
-      "SELECT name * categories ORDER BY name"
+      "SELECT * categories ORDER BY name"
     );
     if (categoryList.rowCount === 0)
       return res.status(404).send("categories list empty");
