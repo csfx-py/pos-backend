@@ -90,7 +90,7 @@ VALUES (50),
 CREATE TABLE products (
     id SERIAL PRIMARY KEY,
     name TEXT UNIQUE NOT NULL,
-    brands_id integer,
+    brands_id integer NULL,
     categories_id integer NOT NULL,
     sizes_id INTEGER NOT NULL,
     barcode TEXT UNIQUE,

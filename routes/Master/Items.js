@@ -140,7 +140,7 @@ router.post("/products", async (req, res) => {
   let errLog = [];
   const data = req.body;
   console.log("1 body data: ", req.body);
-  if (data && data.length > 0) {
+  if (data) {
     const { name, brands_id, categories_id, sizes_id, barcode, purchase_price, case_qty, case_price, discount, mrp, mrp1, mrp2, mrp3, mrp4 } = data;
     try {
       // begin transaction
@@ -148,7 +148,7 @@ router.post("/products", async (req, res) => {
       const itemList = await pool.query(
         `insert into products( name, brands_id, categories_id, sizes_id, barcode, purchase_price, case_qty, case_price, discount, mrp, mrp1, mrp2, mrp3, mrp4 )
           VALUES( $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14 ) RETURNING id`,
-        [name, brands_id, categories_id, sizes_id, barcode, purchase_price, case_qty, case_price, discount, mrp, mrp1, mrp2, mrp3, mrp4]
+        [name, brands_id || null, categories_id, sizes_id, barcode, purchase_price, case_qty, case_price, discount || 0, mrp, mrp1, mrp2, mrp3, mrp4]
       );
       console.log(itemList.rows[0].id);
       if (itemList.rowCount) {
@@ -157,6 +157,7 @@ router.post("/products", async (req, res) => {
         saveLog.push({ id });
         await pool.query("COMMIT");
       } else {
+        console.log("4 ", itemList.rows[0]);
         errLog.push({ id });
         await pool.query("ROLLBACK");
       }

@@ -34,6 +34,7 @@ router.get("/items", async (req, res) => {
   }
 });
 
+// insert products
 router.post("/items", async (req, res) => {
   const data = req.body;
   if (data && data.length > 0) {
@@ -56,6 +57,35 @@ router.post("/items", async (req, res) => {
         return res.status(500).send("Internal server error");
       }
     }
+  }
+});
+
+// stock
+router.post("/stock", async (req, res) => {
+  const data = req.body;
+  let saveLog = [];
+  let errLog = [];
+  if (data && data.length > 0) {
+    for (i = 0; i < data.length; i++) {
+      const { shops_id, product, stock } = data[i];
+      try {
+        // begin transaction
+        await pool.query("BEGIN");
+        const productId = await pool.query(`select id from products where name=$1`, [product]);
+        const itemList = await pool.query(
+          `insert into stock( shops_id, products_id, stock )
+          VALUES( $1, $2, $3 )`,
+          [shops_id, productId.rows[0].id, stock]
+        );
+        if (itemList.rowCount)
+          saveLog.push({ itemList });
+      } catch (error) {
+        console.log(error);
+        errLog.push({ error });
+        return res.status(500).send("Internal server error");
+      }
+    }
+    return res.status(200).send({ saveLog, errLog });
   }
 });
 
