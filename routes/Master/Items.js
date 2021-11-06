@@ -45,9 +45,15 @@ router.get("/size", async (req, res) => {
 router.get("/items", async (req, res) => {
   try {
     const itemList = await pool.query(
-      `SELECT * FROM products 
-      ORDER BY categories_id, name`
-    );
+      `select p.id as id, p.name as name, p.barcode, p.categories_id, c.name as categories_name, 
+      si.id as sizes_id, si.size, p.brands_id, b.name as brands_name, p.purchase_price, p.${price} as mrp,
+      p.discount, p.mrp, p.mrp1, p.mrp2, p.mrp3, p.mrp4
+      from products p
+      Left join categories c on c.id = p.categories_id
+      Left join sizes si on si.id = p.sizes_id
+      Left join brands b on b.id = p.brands_id
+      where s.id=$1
+      order by p.categories_id, p.name`,);
     if (itemList.rowCount === 0)
       return res.status(404).send("Master items list empty");
 
@@ -190,10 +196,9 @@ router.post("/xl-products", async (req, res) => {
         const categories = await pool.query(`select id from categories where name=$1`, [category]);
         const sizes = await pool.query(`select id from sizes where size=$1`, [size]);
         const insertProduct = await pool.query(
-          `insert into products( name, brands_id, categories_id, sizes_id, barcode, purchase_price, case_qty, case_price, mrp, discount, mrp1, mrp2, mrp3, mrp4 )
+          `insert into products( name, brands_id, categories_id, sizes_id, barcode, purchase_price, case_qty, case_price, discount, mrp, mrp1, mrp2, mrp3, mrp4 )
           VALUES( $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14 ) RETURNING id`,
-          [name, brands.rows[0].id || null, categories.rows[0].id, sizes.rows[0].id, barcode || null, purchase_price, case_qty, case_price, discount || 0, mrp, mrp1 || null, mrp2 || null, mrp3 || null, mrp4 || null]
-        );
+          [name, brands.rows[0].id || null, categories.rows[0].id, sizes.rows[0].id, barcode || null, purchase_price, case_qty, case_price, discount || 0, mrp, mrp1 || null, mrp2 || null, mrp3 || null, mrp4 || null]);
         console.log(insertProduct.rows[0].id);
         if (insertProduct.rowCount) {
           console.log("3 ", insertProduct.rows[0]);
