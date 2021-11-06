@@ -173,7 +173,7 @@ router.post("/products", async (req, res) => {
 
 
 // insert xl products rout
-router.post("/xl_products", async (req, res) => {
+router.post("/xl-products", async (req, res) => {
   let existLog = [];
   let saveLog = [];
   let errLog = [];
@@ -182,17 +182,17 @@ router.post("/xl_products", async (req, res) => {
   if (data && data.length > 0) {
     for (i = 0; i < data.length; i++) {
       console.log("2 body data: ", data[i]);
-      const { name, brand, categorie, size, barcode, purchase_price, case_qty, case_price, discount, mrp, mrp1, mrp2, mrp3, mrp4 } = data[i];
+      const { name, brand, category, size, barcode, purchase_price, case_qty, case_price, discount, mrp, mrp1, mrp2, mrp3, mrp4 } = data[i];
       try {
         // begin transaction
         await pool.query("BEGIN");
         const brands = await pool.query(`select id from brands where name=$1`, [brand]);
-        const categories = await pool.query(`select id from categories where name=$1`, [categorie]);
+        const categories = await pool.query(`select id from categories where name=$1`, [category]);
         const sizes = await pool.query(`select id from sizes where name=$1`, [size]);
         const insertProduct = await pool.query(
           `insert into products( name, brands_id, categories_id, sizes_id, barcode, per_case, purchase_price, case_price, mrp, discount, mrp1, mrp2, mrp3, mrp4 )
           VALUES( $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14 ) RETURNING id`,
-          [name, brands.rows[0].id, categories.rows[0].id, sizes.rows[0].id, barcode, purchase_price, case_qty, case_price, discount, mrp, mrp1, mrp2, mrp3, mrp4]
+          [name, brands.rows[0].id || null, categories.rows[0].id, sizes.rows[0].id, barcode || null, purchase_price, case_qty, case_price, discount || null, mrp || null, mrp1 || null, mrp2 || null, mrp3 || null, mrp4 || null]
         );
         console.log(insertProduct.rows[0].id);
         if (insertProduct.rowCount) {
