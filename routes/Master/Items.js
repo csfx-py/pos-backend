@@ -58,6 +58,7 @@ router.get("/items", async (req, res) => {
   }
 });
 
+
 // ---------------------------------------------------------------------------
 
 router.post("/brand", verifyAdmin, async (req, res) => {
@@ -124,6 +125,96 @@ router.post("/size", verifyAdmin, async (req, res) => {
     res.status(200).send(`${size} size saved`);
   } catch (err) {
     return res.status(500).send("Internal Server Error");
+  }
+});
+
+// insert products rout
+router.post("/products", async (req, res) => {
+  let existLog = [];
+  let saveLog = [];
+  let errLog = [];
+  const data = req.body;
+  console.log("1 body data: ", req.body);
+  if (data && data.length > 0) {
+    for (i = 0; i < data.length; i++) {
+      console.log("2 body data: ", data[i]);
+      const { name, brands_id, categories_id, sizes_id, barcode, purchase_price, case_qty, case_price, discount, mrp, mrp1, mrp2, mrp3, mrp4 } = data[i];
+      try {
+        // begin transaction
+        await pool.query("BEGIN");
+        const itemList = await pool.query(
+          `insert into products( name, brands_id, categories_id, sizes_id, barcode, per_case, purchase_price, case_price, mrp, discount, mrp1, mrp2, mrp3, mrp4 )
+          VALUES( $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14 ) RETURNING id`,
+          [name, brands_id, categories_id, sizes_id, barcode, purchase_price, case_qty, case_price, discount, mrp, mrp1, mrp2, mrp3, mrp4]
+        );
+        console.log(itemList.rows[0].id);
+        if (itemList.rowCount) {
+          console.log("3 ", itemList.rows[0]);
+          let id = itemList.rows[0].id;
+          saveLog.push({ id });
+          await pool.query("COMMIT");
+        } else {
+          errLog.push({ id });
+          await pool.query("ROLLBACK");
+        }
+      } catch (error) {
+        console.log(error);
+        await pool.query("ROLLBACK");
+        errLog.push({ name });
+        return res.status(500).send("Internal server error");
+      }
+    } return res.status(200).send({
+      exist: existLog,
+      save: saveLog,
+      err: errLog,
+    });
+  }
+});
+
+
+// insert xl products rout
+router.post("/xl_products", async (req, res) => {
+  let existLog = [];
+  let saveLog = [];
+  let errLog = [];
+  const data = req.body;
+  console.log("1 body data: ", req.body);
+  if (data && data.length > 0) {
+    for (i = 0; i < data.length; i++) {
+      console.log("2 body data: ", data[i]);
+      const { name, brand, categorie, size, barcode, purchase_price, case_qty, case_price, discount, mrp, mrp1, mrp2, mrp3, mrp4 } = data[i];
+      try {
+        // begin transaction
+        await pool.query("BEGIN");
+        const brands = await pool.query(`select id from brands where name=$1`, [brand]);
+        const categories = await pool.query(`select id from categories where name=$1`, [categorie]);
+        const sizes = await pool.query(`select id from sizes where name=$1`, [size]);
+        const insertProduct = await pool.query(
+          `insert into products( name, brands_id, categories_id, sizes_id, barcode, per_case, purchase_price, case_price, mrp, discount, mrp1, mrp2, mrp3, mrp4 )
+          VALUES( $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14 ) RETURNING id`,
+          [name, brands.rows[0].id, categories.rows[0].id, sizes.rows[0].id, barcode, purchase_price, case_qty, case_price, discount, mrp, mrp1, mrp2, mrp3, mrp4]
+        );
+        console.log(insertProduct.rows[0].id);
+        if (insertProduct.rowCount) {
+          console.log("3 ", insertProduct.rows[0]);
+          let id = insertProduct.rows[0].id;
+          saveLog.push({ id });
+          await pool.query("COMMIT");
+        } else {
+          errLog.push({ id });
+          await pool.query("ROLLBACK");
+        }
+      } catch (error) {
+        console.log(error);
+        await pool.query("ROLLBACK");
+        errLog.push({ name });
+        return res.status(500).send("Internal server error");
+      }
+    } return res.status(200).send({
+      exist: existLog,
+      save: saveLog,
+      err: errLog,
+    });
   }
 });
 
