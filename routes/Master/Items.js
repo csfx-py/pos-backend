@@ -4,7 +4,7 @@ const verifyAdmin = require("../../utils/verifyAdmin");
 
 router.get("/brand", async (req, res) => {
   try {
-    const brandList = await pool.query("SELECT name FROM brands ORDER BY name");
+    const brandList = await pool.query("SELECT * FROM brands ORDER BY name");
     if (brandList.rowCount === 0)
       return res.status(404).send("brands list empty");
 
@@ -18,7 +18,7 @@ router.get("/brand", async (req, res) => {
 router.get("/category", async (req, res) => {
   try {
     const categoryList = await pool.query(
-      "SELECT name FROM categories ORDER BY name"
+      "SELECT name * categories ORDER BY name"
     );
     if (categoryList.rowCount === 0)
       return res.status(404).send("categories list empty");
@@ -32,7 +32,7 @@ router.get("/category", async (req, res) => {
 
 router.get("/size", async (req, res) => {
   try {
-    const sizeList = await pool.query("SELECT size FROM sizes ORDER BY size");
+    const sizeList = await pool.query("SELECT * FROM sizes ORDER BY size");
     if (sizeList.rowCount === 0)
       return res.status(404).send("item sizes list empty");
 
