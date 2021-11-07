@@ -499,32 +499,23 @@ router.post("/blk-sale", async (req, res) => {
             );
             if (salesQty.rowCount) {
               const newQty = salesQty.rows[0].qty + data[j].qty;
-              const updateSales = await pool.query(
-                `UPDATE sales set qty = $1 WHERE products_id = $2 AND shops_id = $3 AND sales_date=CURRENT_DATE`,
-                [newQty, data[j].products_id, shops_id]
-              );
+
               console.log("10 newQty: ", newQty);
               if (qty_card != null) {
                 const newCashQty = parseInt(salesQty.rows[0].qty_cash + data[j].qty);
                 console.log("15 newCashQty: ", newCashQty);
-                const updateSales = await pool.query(
-                  `UPDATE sales set qty_cash=$1 WHERE products_id = $2 AND shops_id = $3 AND sales_date=CURRENT_DATE`,
-                  [newCashQty, data[j].products_id, shops_id]
-                );
               }
               if (qty_card != null) {
                 console.log("11 ");
                 const newCardQty = parseInt(salesQty.rows[0].qty_card + data[j].qty);
-                const updateSales = await pool.query(
-                  `UPDATE sales set qty_card=$1 WHERE products_id = $2 AND shops_id = $3 AND sales_date=CURRENT_DATE`,
-                  [newCardQty, data[j].products_id, shops_id]);
               }
               if (qty_upi != null) {
                 const newUPIQty = parseInt(salesQty.rows[0].qty_upi + data[j].qty);
-                const updateSales = await pool.query(
-                  `UPDATE sales set qty_upi = $1 WHERE products_id = $2 AND shops_id = $3 AND sales_date=CURRENT_DATE`,
-                  [newUPIQty, data[j].products_id, shops_id]);
               }
+              const updateSales = await pool.query(
+                `UPDATE sales set qty = $1, qty_cash = $2, qty_card = $3, qty_upi = $4 WHERE products_id = $5 AND shops_id = $6 AND sales_date=CURRENT_DATE`,
+                [newQty, newCashQty, newCardQty, newUPIQty, data[j].products_id, shops_id]
+              );
             } else {
               console.log("12 ");
               if (qty_cash != null) {
