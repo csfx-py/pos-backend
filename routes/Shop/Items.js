@@ -81,9 +81,11 @@ router.post("/stock", async (req, res) => {
           saveLog.push({ itemList });
       } catch (error) {
         console.log(error);
+        pool.query("ROLLBACK");
         errLog.push({ error });
         return res.status(500).send("Internal server error");
       }
+      pool.query("COMMIT");
     }
     return res.status(200).send({ saveLog, errLog });
   }
