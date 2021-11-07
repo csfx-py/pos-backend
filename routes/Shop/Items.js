@@ -512,7 +512,7 @@ router.post("/blk-sale", async (req, res) => {
                   [newCashQty, data[j].products_id, shops_id]
                 );
               }
-              if (qty_upi != null) {
+              if (qty_card != null) {
                 console.log("11 ");
                 const newCardQty = parseInt(salesQty.rows[0].qty_card + data[j].qty);
                 const updateSales = await pool.query(
@@ -527,13 +527,13 @@ router.post("/blk-sale", async (req, res) => {
               }
             } else {
               console.log("12 ");
-              if (transaction_type == "Cash") {
+              if (qty_cash != null) {
                 qty_cash = data[j].qty;
               }
-              if (transaction_type == "Card") {
+              if (qty_card != null) {
                 qty_card = data[j].qty;
               }
-              if (transaction_type == "UPI") {
+              if (qty_upi != null) {
                 qty_upi = data[j].qty;
               }
               const addSales = await pool.query(
