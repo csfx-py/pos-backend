@@ -77,15 +77,16 @@ router.post("/stock", async (req, res) => {
           VALUES( $1, $2, $3 ) RETURNING id`,
           [shops_id, productId.rows[0]?.id, stock]
         );
-        if (itemList.rowCount)
+        if (itemList.rowCount) {
           saveLog.push({ itemList });
+          pool.query("COMMIT");
+        }
       } catch (error) {
         console.log(error);
         pool.query("ROLLBACK");
         errLog.push({ error });
         return res.status(500).send("Internal server error");
       }
-      pool.query("COMMIT");
     }
     return res.status(200).send({ saveLog, errLog });
   }
