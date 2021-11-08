@@ -391,34 +391,19 @@ router.post("/blk-sale", async (req, res) => {
   //     "items":[
   //         {
   //             "products_id":1,
-  //             "qty":5,
   //             "price":1000,
-  //             "transaction_type":"Cash"
-  //         },
-  //         {
-  //             "products_id":1,
-  //             "qty":8,
-  //             "price":1000,
-  //             "transaction_type":"Card"
-  //         },
-  //         {
-  //             "products_id":1,
-  //             "qty":5,
-  //             "price":1000,
-  //             "transaction_type":"UPI"
+  //             "qty_cash":3,
+  //             "qty_card":6,
+  //             "qty_upi":9,
   //         },
   //         {
   //             "products_id":2,
   //             "qty":8,
   //             "price":980,
-  //             "transaction_type":"Cash"
+  //             "qty_cash":18,
+  //             "qty_card":32,
+  //             "qty_upi":55,
   //         },
-  //         {
-  //             "products_id":2,
-  //             "qty":8,
-  //             "price":980,
-  //             "transaction_type":"UPI"
-  //         }
   //     ]
   // }
 
@@ -426,6 +411,9 @@ router.post("/blk-sale", async (req, res) => {
   // console.log(req.body);
   let saveLog = [];
   let errLog = [];
+  let qty_cash = [];
+  let qty_card = [];
+  let qty_upi = [];
   let sales_no = "";
   const date = new Date();
   // console.log(data.length);
@@ -435,7 +423,9 @@ router.post("/blk-sale", async (req, res) => {
   if (fdata && items.length > 0) {
     try {
       for (i = 0; i < items.length; i++) {
-        const { products_id, qty } = items[i];
+        const { products_id, price, qty_cash, qty_card, qty_upi } = items[i];
+        let qty = parseInt(qty_cash + qty_card + qty_upi);
+
         const itemList = await pool.query(
           `SELECT stock FROM stock WHERE products_id = $1 and shops_id = $2`,
           [products_id, shops_id]
@@ -444,42 +434,56 @@ router.post("/blk-sale", async (req, res) => {
           errLog.push({ products_id });
           return res.status(404).send("Not enough stock");
         } else {
-
           try {
+            let brokenData = [];
+            if (qty_cash > 0) {
+              cash_item = { products_id, price, qty: qty_cash, transaction_type: "Cash" };
+              console.log("\n\n\n2 cash_item:\n ", cash_item);
+              brokenData = await splitInvoice(cash_item);
+            }
+            if (qty_card > 0) {
+              card_item = { products_id, price, qty: qty_card, transaction_type: "Card" };
+              console.log("\n\n\n3 card_item:\n ", card_item);
+              brokenData += await splitInvoice(card_item);
+            }
+            if (qty_upi > 0) {
+              upi_item = { products_id, price, qty: qty_upi, transaction_type: "UPI" };
+              console.log("\n\n\n4 upi_item:\n ", upi_item);
+              brokenData += await splitInvoice(upi_item);
+            }
+            console.log("\n\n\n5 brokenData:\n", brokenData);
             //begin transaction
             await pool.query("BEGIN");
             const sales_count = await pool.query(
               `SELECT COUNT( DISTINCT sales_no) AS count FROM invoices
-        WHERE shops_id = $1 and
-        inserted_at = CURRENT_DATE`,
+              WHERE shops_id = $1 and
+              inserted_at = CURRENT_DATE`,
               [shops_id]
             );
             sales_no = `${date.getFullYear()}${date.getMonth()}${date.getDate()}${sales_count.rows[0].count + 1}`;
-
-            const brokenData = await splitInvoice(items);
             // console.log("\n\nbroken data : \n\n", brokenData);
             // console.log("\n\nbroken data length : \n\n", brokenData.length);
-            console.log('2');
+            console.log('6 ');
             for (i = 0; i < brokenData.length; i++) {
               const data = brokenData[i];
               // console.log(`\n\nbroken loop ${i} : \n`, brokenData[i]);
               const invoiceList = await pool.query(
                 `SELECT * FROM invoices
-          WHERE invoice_number = $1 and
-          invoice_date = CURRENT_DATE`,
+                WHERE invoice_number = $1 and
+                invoice_date = CURRENT_DATE`,
                 [shops_id]
               );
               // invoice ID in formate yyyy-mm-dd-shop-invoice_no
               const invoice_number = `${new Date().toISOString().slice(0, 10)}-${shops_id}-${invoiceList.rowCount + 1}`;
 
               for (j = 0; j < data.length; j++) {
-                console.log(`\n\t3 broken Data ${j} : \n\t`, data[j]);
+                console.log(`\n\t7 broken Data ${j} : \n\t`, data[j]);
                 console.log(`\nsales_no: ${sales_no},\ninvoice_number: ${invoice_number},\nshops_id: ${shops_id},\nusers_id: ${users_id},\nproducts_id: ${data[j].products_id},\nqty: ${data[j].qty},\nprice: ${data[j].price},\ntotal: ${data[j].total},\ntransaction_type: ${transaction_type}\n\n`);
                 // saveLog.push(data[j].products_id);
                 const invoiceSaved = await pool.query(
                   `INSERT INTO invoices( sales_no, invoice_number, shops_id, users_id, products_id, qty, price, total, transaction_type)
-            VALUES ( $1, $2, $3, $4, $5, $6, $7, $8, $9 )
-            RETURNING sales_no`,
+                  VALUES ( $1, $2, $3, $4, $5, $6, $7, $8, $9 )
+                  RETURNING sales_no`,
                   [
                     sales_no,
                     invoice_number,
@@ -548,7 +552,7 @@ router.post("/blk-sale", async (req, res) => {
                     }
                     const addSales = await pool.query(
                       `INSERT INTO sales( sales_date, shops_id, products_id, qty, price, qty_cash, qty_card, qty_upi)
-            VALUES ( CURRENT_DATE, $1, $2, $3, $4, $5, $6, $7 )`,
+                      VALUES ( CURRENT_DATE, $1, $2, $3, $4, $5, $6, $7 )`,
                       [shops_id, data[j].products_id, data[j].qty, data[j].price, qty_cash, qty_card, qty_upi]
                     );
                   }
