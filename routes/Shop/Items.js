@@ -388,17 +388,36 @@ router.post("/blk-sale", async (req, res) => {
   //   data featched:{
   //     "shops_id":1,
   //     "users_id":1,
-  //     "transaction_type":"Cash",
   //     "items":[
   //         {
   //             "products_id":1,
   //             "qty":5,
-  //             "price":1000
+  //             "price":1000,
+  //             "transaction_type":"Cash"
+  //         },
+  //         {
+  //             "products_id":1,
+  //             "qty":8,
+  //             "price":1000,
+  //             "transaction_type":"Card"
+  //         },
+  //         {
+  //             "products_id":1,
+  //             "qty":5,
+  //             "price":1000,
+  //             "transaction_type":"UPI"
   //         },
   //         {
   //             "products_id":2,
   //             "qty":8,
-  //             "price":980
+  //             "price":980,
+  //             "transaction_type":"Cash"
+  //         },
+  //         {
+  //             "products_id":2,
+  //             "qty":8,
+  //             "price":980,
+  //             "transaction_type":"UPI"
   //         }
   //     ]
   // }
