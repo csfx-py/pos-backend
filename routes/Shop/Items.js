@@ -456,19 +456,19 @@ router.post("/blk-sale", async (req, res) => {
               cash_item = { products_id, price, qty: qty_cash, transaction_type: "Cash" };
               console.log("\n\n\n2 cash_item:\n ", cash_item);
               cash_Data = await splitInvoice(cash_item);
-              brokenData.concat(cash_Data);
+              brokenData = [...brokenData, ...cash_Data];
             }
             if (qty_card > 0) {
               card_item = { products_id, price, qty: qty_card, transaction_type: "Card" };
               console.log("\n\n\n3 card_item:\n ", card_item);
               card_Data = await splitInvoice(card_item);
-              brokenData.concat(card_Data);
+              brokenData = [...brokenData, ...card_Data];
             }
             if (qty_upi > 0) {
               upi_item = { products_id, price, qty: qty_upi, transaction_type: "UPI" };
               console.log("\n\n\n4 upi_item:\n ", upi_item);
               upi_Data = await splitInvoice(upi_item);
-              brokenData.concat(upi_Data);
+              brokenData = [...brokenData, ...upi_Data];
             }
             console.log("\n\n\n5 brokenData:\n", brokenData);
             //begin transaction
