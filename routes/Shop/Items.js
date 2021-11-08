@@ -563,6 +563,9 @@ router.post("/blk-sale", async (req, res) => {
                     }
                   } else {
                     console.log("18 ");
+                    let cash_data = 0;
+                    let card_data = 0;
+                    let upi_data = 0;
                     if (data[j].transaction_type == "Cash") {
                       cash_data = data[j].qty;
                     }
@@ -575,7 +578,7 @@ router.post("/blk-sale", async (req, res) => {
                     const addSales = await pool.query(
                       `INSERT INTO sales( sales_date, shops_id, products_id, qty, price, qty_cash, qty_card, qty_upi)
                       VALUES ( CURRENT_DATE, $1, $2, $3, $4, $5, $6, $7 )`,
-                      [shops_id, data[j].products_id, data[j].qty, data[j].price, cash_data || 0, card_data || 0, upi_data || 0]
+                      [shops_id, data[j].products_id, data[j].qty, data[j].price, cash_data, card_data, upi_data]
                     );
                   }
                   console.log("13");
