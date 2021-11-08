@@ -9,12 +9,12 @@ router.post("/login", async (req, res) => {
   try {
     //   check exists
     const userList = await pool.query(
-      `SELECT u.name, u.password, u.roles_id, 
+      `SELECT u.id, u.name, u.password, u.roles_id, 
       u.is_priviledged, array_agg(d.shops_id) shops_id
       FROM users u 
       LEFT JOIN domains d 
       ON d.users_id=u.id WHERE name = $1 
-      GROUP BY u.name, u.password, u.roles_id,
+      GROUP BY u.id, u.name, u.password, u.roles_id,
       u.is_priviledged`,
       [name]
     );
@@ -56,12 +56,12 @@ router.post("/refresh", async (req, res) => {
     const { name } = payload;
     // check user
     const userList = await pool.query(
-      `SELECT u.name, u.password, u.roles_id, 
+      `SELECT u.id, u.name, u.password, u.roles_id, 
     u.is_priviledged, array_agg(d.shops_id) shops_id
     FROM users u 
     LEFT JOIN domains d 
     ON d.users_id=u.id WHERE name = $1 
-    GROUP BY u.name, u.password, u.roles_id,
+    GROUP BY u.id, u.name, u.password, u.roles_id,
     u.is_priviledged`,
       [name]
     );

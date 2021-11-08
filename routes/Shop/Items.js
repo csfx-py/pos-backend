@@ -245,7 +245,7 @@ router.post("/sale", async (req, res) => {
           `SELECT stock FROM stock WHERE products_id = $1 and shops_id = $2`,
           [products_id, shops_id]
         );
-        if (itemList.row[0].stock < qty) {
+        if (itemList.rows[0].stock < qty) {
           errLog.push({ products_id });
           return res.status(404).send("Not enough stock");
         }
@@ -422,7 +422,7 @@ router.post("/blk-sale", async (req, res) => {
           `SELECT stock FROM stock WHERE products_id = $1 and shops_id = $2`,
           [products_id, shops_id]
         );
-        if (itemList.row[0].stock < qty) {
+        if (itemList.rows[0].stock < qty) {
           errLog.push({ products_id });
           return res.status(404).send("Not enough stock");
         }
