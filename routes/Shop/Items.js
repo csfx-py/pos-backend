@@ -497,9 +497,8 @@ router.post("/blk-sale", async (req, res) => {
               );
               // invoice ID in formate yyyy-mm-dd-shop-invoice_no
               const invoice_number = `${new Date().toISOString().slice(0, 10)}-${shops_id}-${invoiceList.rowCount + 1}`;
-
               for (j = 0; j < data.length; j++) {
-                console.log(`\n\t10 broken Data ${j} : \n\t`, data[j]);
+                console.log(`\n\n10 broken Data ${j} : \n`, data[j]);
                 console.log(`\nsales_no: ${sales_no},\ninvoice_number: ${invoice_number},\nshops_id: ${shops_id},\nusers_id: ${users_id},\nproducts_id: ${data[j].products_id},\nqty: ${data[j].qty},\nprice: ${data[j].price},\ntotal: ${data[j].total},\ntransaction_type: ${data[j].transaction_type}\n\n`);
                 // saveLog.push(data[j].products_id);
                 const invoiceSaved = await pool.query(
@@ -550,19 +549,20 @@ router.post("/blk-sale", async (req, res) => {
                         [newQty, newCashQty, data[j].products_id, shops_id]
                       );
                     } else if (data[j].transaction_type == "Card") {
-                      console.log("17 ");
                       const newCardQty = parseInt(salesQty.rows[0].qty_card + data[j].qty);
+                      console.log("17 newCardQty: ", newCardQty);
                       const updateSales = await pool.query(
                         `UPDATE sales set qty = $1, qty_card=$2 WHERE products_id = $3 AND shops_id = $4 AND sales_date=CURRENT_DATE`,
                         [newQty, newCardQty, data[j].products_id, shops_id]);
                     } else if (data[j].transaction_type == "UPI") {
                       const newUPIQty = parseInt(salesQty.rows[0].qty_upi + data[j].qty);
+                      console.log("18 newUPIQty: ", newUPIQty);
                       const updateSales = await pool.query(
                         `UPDATE sales set qty = $1, qty_upi = $2 WHERE products_id = $3 AND shops_id = $4 AND sales_date=CURRENT_DATE`,
                         [newQty, newUPIQty, data[j].products_id, shops_id]);
                     }
                   } else {
-                    console.log("18 ");
+                    console.log("19 ");
                     let cash_data = 0;
                     let card_data = 0;
                     let upi_data = 0;
@@ -581,15 +581,15 @@ router.post("/blk-sale", async (req, res) => {
                       [shops_id, data[j].products_id, data[j].qty, data[j].price, cash_data, card_data, upi_data]
                     );
                   }
-                  console.log("13");
+                  console.log("20 ");
                 }
-                console.log("14");
+                console.log("21 ");
               }
-              console.log("15");
+              console.log("22 ");
               await pool.query("COMMIT");
             }
           } catch (err) {
-            console.log("16");
+            console.log("23 ");
             console.log(err);
             await pool.query("ROLLBACK");
             errLog.push({ shops_id });
