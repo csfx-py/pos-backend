@@ -453,24 +453,27 @@ router.post("/blk-sale", async (req, res) => {
           try {
             let brokenData = [];
             if (qty_cash > 0) {
-              cash_item = { products_id, price, qty: qty_cash, transaction_type: "Cash" };
+              cash_item = [{ products_id, price, qty: qty_cash, transaction_type: "Cash" }];
               console.log("\n\n\n2 cash_item:\n ", cash_item);
               cash_Data = await splitInvoice(cash_item);
+              console.log("\n\n\n3 cash_Data:\n ", cash_Data);
               brokenData = [...brokenData, ...cash_Data];
             }
             if (qty_card > 0) {
-              card_item = { products_id, price, qty: qty_card, transaction_type: "Card" };
-              console.log("\n\n\n3 card_item:\n ", card_item);
+              card_item = [{ products_id, price, qty: qty_card, transaction_type: "Card" }];
+              console.log("\n\n\n4 card_item:\n ", card_item);
               card_Data = await splitInvoice(card_item);
+              console.log("\n\n\n5 card_Data:\n ", card_Data);
               brokenData = [...brokenData, ...card_Data];
             }
             if (qty_upi > 0) {
-              upi_item = { products_id, price, qty: qty_upi, transaction_type: "UPI" };
-              console.log("\n\n\n4 upi_item:\n ", upi_item);
+              upi_item = [{ products_id, price, qty: qty_upi, transaction_type: "UPI" }];
+              console.log("\n\n\n6 upi_item:\n ", upi_item);
               upi_Data = await splitInvoice(upi_item);
+              console.log("\n\n\n7 upi_Data:\n ", upi_Data);
               brokenData = [...brokenData, ...upi_Data];
             }
-            console.log("\n\n\n5 brokenData:\n", brokenData);
+            console.log("\n\n\n8 brokenData:\n", brokenData);
             //begin transaction
             await pool.query("BEGIN");
             const sales_count = await pool.query(
@@ -482,7 +485,7 @@ router.post("/blk-sale", async (req, res) => {
             sales_no = `${date.getFullYear()}${date.getMonth()}${date.getDate()}${sales_count.rows[0].count + 1}`;
             // console.log("\n\nbroken data : \n\n", brokenData);
             // console.log("\n\nbroken data length : \n\n", brokenData.length);
-            console.log('6 ');
+            console.log('9 ');
             for (i = 0; i < brokenData.length; i++) {
               const data = brokenData[i];
               // console.log(`\n\nbroken loop ${i} : \n`, brokenData[i]);
@@ -496,8 +499,8 @@ router.post("/blk-sale", async (req, res) => {
               const invoice_number = `${new Date().toISOString().slice(0, 10)}-${shops_id}-${invoiceList.rowCount + 1}`;
 
               for (j = 0; j < data.length; j++) {
-                console.log(`\n\t7 broken Data ${j} : \n\t`, data[j]);
-                console.log(`\nsales_no: ${sales_no},\ninvoice_number: ${invoice_number},\nshops_id: ${shops_id},\nusers_id: ${users_id},\nproducts_id: ${data[j].products_id},\nqty: ${data[j].qty},\nprice: ${data[j].price},\ntotal: ${data[j].total},\ntransaction_type: ${transaction_type}\n\n`);
+                console.log(`\n\t10 broken Data ${j} : \n\t`, data[j]);
+                console.log(`\nsales_no: ${sales_no},\ninvoice_number: ${invoice_number},\nshops_id: ${shops_id},\nusers_id: ${users_id},\nproducts_id: ${data[j].products_id},\nqty: ${data[j].qty},\nprice: ${data[j].price},\ntotal: ${data[j].total},\ntransaction_type: ${data[j].transaction_type}\n\n`);
                 // saveLog.push(data[j].products_id);
                 const invoiceSaved = await pool.query(
                   `INSERT INTO invoices( sales_no, invoice_number, shops_id, users_id, products_id, qty, price, total, transaction_type)
@@ -516,38 +519,38 @@ router.post("/blk-sale", async (req, res) => {
                   ]
                 );
                 if (invoiceSaved.rowCount) {
-                  console.log("5 ");
+                  console.log("11 ");
                   saveLog.push(data[j].products_id);
                   const activeQty = await pool.query(
                     `SELECT stock FROM stock WHERE products_id = $1 AND shops_id = $2`,
                     [data[j].products_id, shops_id]
                   );
-                  console.log("6 ");
+                  console.log("12 ");
                   if (activeQty.rowCount) {
                     const newQty = activeQty.rows[0].stock - data[j].qty;
                     const updatestock = await pool.query(
                       `UPDATE stock set stock = $1 WHERE products_id = $2 AND shops_id = $3`,
                       [newQty, data[j].products_id, shops_id]
                     );
-                    console.log("7 newStockQty: ", newQty);
+                    console.log("13 newStockQty: ", newQty);
                   }
-                  console.log("9 ");
+                  console.log("14 ");
                   const salesQty = await pool.query(
                     `SELECT qty, qty_cash, qty_card, qty_upi FROM sales WHERE products_id = $1 AND shops_id = $2 and sales_date=CURRENT_DATE`,
                     [data[j].products_id, shops_id]
                   );
                   if (salesQty.rowCount) {
                     const newQty = salesQty.rows[0].qty + data[j].qty;
-                    console.log("10 newQty: ", newQty);
+                    console.log("15 newQty: ", newQty);
                     if (data[j].transaction_type == "Cash") {
                       const newCashQty = parseInt(salesQty.rows[0].qty_cash + data[j].qty);
-                      console.log("15 newCashQty: ", newCashQty);
+                      console.log("16 newCashQty: ", newCashQty);
                       const updateSales = await pool.query(
                         `UPDATE sales set qty = $1, qty_cash=$2 WHERE products_id = $3 AND shops_id = $4 AND sales_date=CURRENT_DATE`,
                         [newQty, newCashQty, data[j].products_id, shops_id]
                       );
                     } else if (data[j].transaction_type == "Card") {
-                      console.log("11 ");
+                      console.log("17 ");
                       const newCardQty = parseInt(salesQty.rows[0].qty_card + data[j].qty);
                       const updateSales = await pool.query(
                         `UPDATE sales set qty = $1, qty_card=$2 WHERE products_id = $3 AND shops_id = $4 AND sales_date=CURRENT_DATE`,
@@ -559,20 +562,20 @@ router.post("/blk-sale", async (req, res) => {
                         [newQty, newUPIQty, data[j].products_id, shops_id]);
                     }
                   } else {
-                    console.log("12 ");
+                    console.log("18 ");
                     if (data[j].transaction_type == "Cash") {
-                      qty_cash = data[j].qty;
+                      cash_data = data[j].qty;
                     }
                     else if (data[j].transaction_type == "Card") {
-                      qty_card = data[j].qty;
+                      card_data = data[j].qty;
                     }
                     else if (data[j].transaction_type == "UPI") {
-                      qty_upi = data[j].qty;
+                      upi_data = data[j].qty;
                     }
                     const addSales = await pool.query(
                       `INSERT INTO sales( sales_date, shops_id, products_id, qty, price, qty_cash, qty_card, qty_upi)
                       VALUES ( CURRENT_DATE, $1, $2, $3, $4, $5, $6, $7 )`,
-                      [shops_id, data[j].products_id, data[j].qty, data[j].price, qty_cash, qty_card, qty_upi]
+                      [shops_id, data[j].products_id, data[j].qty, data[j].price, cash_data || 0, card_data || 0, upi_data || 0]
                     );
                   }
                   console.log("13");
