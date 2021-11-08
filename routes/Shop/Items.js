@@ -92,6 +92,24 @@ router.post("/stock", async (req, res) => {
   }
 });
 
+//sold today
+router.get("/temp-sold", async (req, res) => {
+  const data = req.body;
+  try {
+    const { shops_id, sales_date } = req.query;
+    const itemList = await pool.query(
+      `select * from sales where shops_id=$1 and sales_date=$2`,
+      [shops_id, sales_date]);
+    if (itemList.rowCount === 0)
+      return res.status(404).send("No Items found in Shop");
+
+    return res.status(200).send(itemList.rows);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send("Internal server error");
+  }
+});
+
 // specific products rout
 router.get("/product/:id", async (req, res) => {
   console.log(req.params);
@@ -411,9 +429,6 @@ router.post("/blk-sale", async (req, res) => {
   // console.log(req.body);
   let saveLog = [];
   let errLog = [];
-  let qty_cash = [];
-  let qty_card = [];
-  let qty_upi = [];
   let sales_no = "";
   const date = new Date();
   // console.log(data.length);
@@ -427,13 +442,13 @@ router.post("/blk-sale", async (req, res) => {
         let qty = parseInt(qty_cash + qty_card + qty_upi);
 
         const itemList = await pool.query(
-          `SELECT stock FROM stock WHERE products_id = $1 and shops_id = $2`,
+          `SELECT * FROM stock WHERE products_id = $1 and shops_id = $2`,
           [products_id, shops_id]
         );
         console.log("2 itemList: ", itemList);
         if (itemList.rowCount && itemList.rows[0].stock < qty) {
           errLog.push({ products_id });
-          return res.status(404).send("Not enough stock");
+          return res.status(100).send("Not enough stock");
         } else {
           try {
             let brokenData = [];
@@ -524,20 +539,20 @@ router.post("/blk-sale", async (req, res) => {
                   if (salesQty.rowCount) {
                     const newQty = salesQty.rows[0].qty + data[j].qty;
                     console.log("10 newQty: ", newQty);
-                    if (transaction_type == "Cash") {
+                    if (data[j].transaction_type == "Cash") {
                       const newCashQty = parseInt(salesQty.rows[0].qty_cash + data[j].qty);
                       console.log("15 newCashQty: ", newCashQty);
                       const updateSales = await pool.query(
                         `UPDATE sales set qty = $1, qty_cash=$2 WHERE products_id = $3 AND shops_id = $4 AND sales_date=CURRENT_DATE`,
                         [newQty, newCashQty, data[j].products_id, shops_id]
                       );
-                    } else if (transaction_type == "Card") {
+                    } else if (data[j].transaction_type == "Card") {
                       console.log("11 ");
                       const newCardQty = parseInt(salesQty.rows[0].qty_card + data[j].qty);
                       const updateSales = await pool.query(
                         `UPDATE sales set qty = $1, qty_card=$2 WHERE products_id = $3 AND shops_id = $4 AND sales_date=CURRENT_DATE`,
                         [newQty, newCardQty, data[j].products_id, shops_id]);
-                    } else if (transaction_type == "UPI") {
+                    } else if (data[j].transaction_type == "UPI") {
                       const newUPIQty = parseInt(salesQty.rows[0].qty_upi + data[j].qty);
                       const updateSales = await pool.query(
                         `UPDATE sales set qty = $1, qty_upi = $2 WHERE products_id = $3 AND shops_id = $4 AND sales_date=CURRENT_DATE`,
@@ -545,13 +560,13 @@ router.post("/blk-sale", async (req, res) => {
                     }
                   } else {
                     console.log("12 ");
-                    if (transaction_type == "Cash") {
+                    if (data[j].transaction_type == "Cash") {
                       qty_cash = data[j].qty;
                     }
-                    else if (transaction_type == "Card") {
+                    else if (data[j].transaction_type == "Card") {
                       qty_card = data[j].qty;
                     }
-                    else if (transaction_type == "UPI") {
+                    else if (data[j].transaction_type == "UPI") {
                       qty_upi = data[j].qty;
                     }
                     const addSales = await pool.query(
