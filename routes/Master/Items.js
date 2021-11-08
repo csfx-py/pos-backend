@@ -46,7 +46,7 @@ router.get("/items", async (req, res) => {
   try {
     const itemList = await pool.query(
       `select p.id as id, p.name as name, p.barcode, p.categories_id, c.name as categories_name, 
-      si.id as sizes_id, si.size, p.brands_id, b.name as brands_name, p.purchase_price,
+      si.id as sizes_id, si.size, p.brands_id, b.name as brands_name, p.purchase_price, p.case_price,
       p.discount, p.mrp, p.mrp1, p.mrp2, p.mrp3, p.mrp4
       from products p
       Left join categories c on c.id = p.categories_id
