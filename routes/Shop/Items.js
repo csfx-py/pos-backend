@@ -131,8 +131,7 @@ router.post("/purchase", async (req, res) => {
   // console.log(data);
   if (data && data.length > 0) {
     for (i = 0; i < data.length; i++) {
-      const { shops_id, products_id, purchase_date, qty_case, qty_item } =
-        data[i];
+      const { shops_id, products_id, purchase_date, qty_case, qty_item } = data[i];
       try {
         // begin transaction
         await pool.query("BEGIN");
@@ -168,19 +167,20 @@ router.post("/purchase", async (req, res) => {
         if (saved.rowCount) {
           console.log("5");
           saveLog.push({ products_id });
-          const qty = qty_case * itemList.rows[0].per_case + qty_item;
+          const qty = parseInt((qty_case * itemList.rows[0].case_qty) + qty_item);
           const activeQty = await pool.query(
             `SELECT stock FROM stock WHERE products_id = $1 AND shops_id = $2`,
             [products_id, shops_id]
           );
-
           if (activeQty.rowCount) {
+            console.log("6");
             const newQty = activeQty.rows[0].stock + qty;
             const updateActive = await pool.query(
               `UPDATE stock set stock = $1 WHERE products_id = $2 AND shops_id = $3`,
               [newQty, products_id, shops_id]
             );
           } else {
+            console.log("7  \n", shops_id, products_id, qty);
             const addActive = await pool.query(
               `INSERT INTO stock( shops_id, products_id, stock )
             VALUES ( $1, $2, $3 )`,
@@ -430,7 +430,8 @@ router.post("/blk-sale", async (req, res) => {
           `SELECT stock FROM stock WHERE products_id = $1 and shops_id = $2`,
           [products_id, shops_id]
         );
-        if (itemList.rows[0].stock < qty) {
+        console.log("2 itemList: ", itemList);
+        if (itemList.rowCount && itemList.rows[0].stock < qty) {
           errLog.push({ products_id });
           return res.status(404).send("Not enough stock");
         } else {
@@ -439,17 +440,20 @@ router.post("/blk-sale", async (req, res) => {
             if (qty_cash > 0) {
               cash_item = { products_id, price, qty: qty_cash, transaction_type: "Cash" };
               console.log("\n\n\n2 cash_item:\n ", cash_item);
-              brokenData = await splitInvoice(cash_item);
+              cash_Data = await splitInvoice(cash_item);
+              brokenData.concat(cash_Data);
             }
             if (qty_card > 0) {
               card_item = { products_id, price, qty: qty_card, transaction_type: "Card" };
               console.log("\n\n\n3 card_item:\n ", card_item);
-              brokenData += await splitInvoice(card_item);
+              card_Data = await splitInvoice(card_item);
+              brokenData.concat(card_Data);
             }
             if (qty_upi > 0) {
               upi_item = { products_id, price, qty: qty_upi, transaction_type: "UPI" };
               console.log("\n\n\n4 upi_item:\n ", upi_item);
-              brokenData += await splitInvoice(upi_item);
+              upi_Data = await splitInvoice(upi_item);
+              brokenData.concat(upi_Data);
             }
             console.log("\n\n\n5 brokenData:\n", brokenData);
             //begin transaction
