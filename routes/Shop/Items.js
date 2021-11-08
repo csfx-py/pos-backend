@@ -94,7 +94,7 @@ router.post("/stock", async (req, res) => {
 
 //sold today
 router.get("/temp-sold", async (req, res) => {
-  const data = req.body;
+  const data = req.query;
   try {
     const { shops_id, sales_date } = req.query;
     const itemList = await pool.query(
@@ -442,7 +442,7 @@ router.post("/blk-sale", async (req, res) => {
         let qty = parseInt(qty_cash + qty_card + qty_upi);
 
         const itemList = await pool.query(
-          `SELECT * FROM stock WHERE products_id = $1 and shops_id = $2`,
+          `SELECT stock FROM stock WHERE products_id = $1 and shops_id = $2`,
           [products_id, shops_id]
         );
         console.log("2 itemList: ", itemList);
