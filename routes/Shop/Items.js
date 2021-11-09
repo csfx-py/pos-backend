@@ -401,8 +401,8 @@ router.post("/sale", async (req, res) => {
   });
 });
 
-// bulk sales route
-router.post("/blk-sale", async (req, res) => {
+// blk sales route
+router.post("/blkSales", async (req, res) => {
   //   data featched:{
   //     "shops_id":1,
   //     "users_id":1,
@@ -425,19 +425,17 @@ router.post("/blk-sale", async (req, res) => {
   //     ]
   // }
 
-  const fdata = req.body;
-  // console.log(req.body);
+
+  const { shops_id, users_id, items } = req.body;
   let saveLog = [];
   let errLog = [];
   let sales_no = "";
   const date = new Date();
-  // console.log(data.length);
-  const { shops_id, users_id, items } = fdata;
-  // console.log(items);
-  console.log("\n\n\n1 items:\n ", items);
-  if (fdata && items.length > 0) {
+  if (req.body && items.length > 0) {
     try {
-      for (i = 0; i < items.length; i++) {
+      console.log("1 ");
+      await pool.query("BEGIN");
+      for (let i = 0; i < items.length; i++) {
         const { products_id, price, qty_cash, qty_card, qty_upi } = items[i];
         let qty = parseInt(qty_cash + qty_card + qty_upi);
 
@@ -445,37 +443,32 @@ router.post("/blk-sale", async (req, res) => {
           `SELECT stock FROM stock WHERE products_id = $1 and shops_id = $2`,
           [products_id, shops_id]
         );
-        console.log("2 itemList: ", itemList);
-        if (itemList.rowCount && itemList.rows[0].stock < qty) {
-          errLog.push({ products_id });
-          return res.status(100).send("Not enough stock");
-        } else {
+        // console.log("2 itemList: ", itemList);
+        if (itemList.rowCount && qty < itemList.rows[0].stock) {
           try {
             let brokenData = [];
             if (qty_cash > 0) {
               cash_item = [{ products_id, price, qty: qty_cash, transaction_type: "Cash" }];
-              console.log("\n\n\n2 cash_item:\n ", cash_item);
+              // console.log("\n\n\n2 cash_item:\n ", cash_item);
               cash_Data = await splitInvoice(cash_item);
-              console.log("\n\n\n3 cash_Data:\n ", cash_Data);
+              // console.log("\n\n\n3 cash_Data:\n ", cash_Data);
               brokenData = [...brokenData, ...cash_Data];
             }
             if (qty_card > 0) {
               card_item = [{ products_id, price, qty: qty_card, transaction_type: "Card" }];
-              console.log("\n\n\n4 card_item:\n ", card_item);
+              // console.log("\n\n\n4 card_item:\n ", card_item);
               card_Data = await splitInvoice(card_item);
-              console.log("\n\n\n5 card_Data:\n ", card_Data);
+              // console.log("\n\n\n5 card_Data:\n ", card_Data);
               brokenData = [...brokenData, ...card_Data];
             }
             if (qty_upi > 0) {
               upi_item = [{ products_id, price, qty: qty_upi, transaction_type: "UPI" }];
-              console.log("\n\n\n6 upi_item:\n ", upi_item);
+              // console.log("\n\n\n6 upi_item:\n ", upi_item);
               upi_Data = await splitInvoice(upi_item);
-              console.log("\n\n\n7 upi_Data:\n ", upi_Data);
+              // console.log("\n\n\n7 upi_Data:\n ", upi_Data);
               brokenData = [...brokenData, ...upi_Data];
             }
             console.log("\n\n\n8 brokenData:\n", brokenData);
-            //begin transaction
-            await pool.query("BEGIN");
             const sales_count = await pool.query(
               `SELECT COUNT( DISTINCT sales_no) AS count FROM invoices
               WHERE shops_id = $1 and
@@ -483,22 +476,22 @@ router.post("/blk-sale", async (req, res) => {
               [shops_id]
             );
             sales_no = `${date.getFullYear()}${date.getMonth()}${date.getDate()}${sales_count.rows[0].count + 1}`;
-            // console.log("\n\nbroken data : \n\n", brokenData);
-            // console.log("\n\nbroken data length : \n\n", brokenData.length);
-            console.log('9 ');
-            for (i = 0; i < brokenData.length; i++) {
+            // console.log("9 sales_no: ", sales_no);
+            let i = 0;
+            while (i < brokenData.length) {
+              // console.log(`10 ${i}brokenData: `, brokenData[i]);
               const data = brokenData[i];
               // console.log(`\n\nbroken loop ${i} : \n`, brokenData[i]);
               const invoiceList = await pool.query(
-                `SELECT * FROM invoices
-                WHERE invoice_number = $1 and
-                invoice_date = CURRENT_DATE`,
+                `SELECT COUNT( DISTINCT invoice_number) AS count FROM invoices
+                WHERE shops_id = $1 and invoice_date = CURRENT_DATE`,
                 [shops_id]
               );
               // invoice ID in formate yyyy-mm-dd-shop-invoice_no
-              const invoice_number = `${new Date().toISOString().slice(0, 10)}-${shops_id}-${invoiceList.rowCount + 1}`;
+              const invoice_number = `${new Date().toISOString().slice(0, 10)}${shops_id}${invoiceList.rows[0].count + 1}`;
+              // console.log("11 invoice_number: ", invoice_number);
               for (j = 0; j < data.length; j++) {
-                console.log(`\n\n10 broken Data ${j} : \n`, data[j]);
+                console.log(`\n\n12 broken Data ${j} : \n`, data[j]);
                 console.log(`\nsales_no: ${sales_no},\ninvoice_number: ${invoice_number},\nshops_id: ${shops_id},\nusers_id: ${users_id},\nproducts_id: ${data[j].products_id},\nqty: ${data[j].qty},\nprice: ${data[j].price},\ntotal: ${data[j].total},\ntransaction_type: ${data[j].transaction_type}\n\n`);
                 // saveLog.push(data[j].products_id);
                 const invoiceSaved = await pool.query(
@@ -585,28 +578,41 @@ router.post("/blk-sale", async (req, res) => {
                 }
                 console.log("21 ");
               }
-              console.log("22 ");
-              await pool.query("COMMIT");
+              i++;
             }
           } catch (err) {
-            console.log("23 ");
-            console.log(err);
+            console.log("12 err: ", err);
             await pool.query("ROLLBACK");
             errLog.push({ shops_id });
             return;
           }
+          console.log("13 ");
+        } else {
+          console.log("14 err");
+          await pool.query("ROLLBACK");
+          errLog.push({ shops_id, products_id });
+          return res.status(100).send({
+            err: errLog
+          });
         }
+        console.log("14 if");
       }
+      await pool.query("COMMIT");
+      console.log("15 ");
     } catch (err) {
-      console.log(err);
+      console.log("16 err: ", err);
       return res.status(100).send("No data was retrieved, updated, or deleted.");
     }
+    console.log("17 ");
+    return res.status(200).send({
+      save: saveLog,
+      err: errLog,
+      sales_no: sales_no,
+    });
   }
-  return res.status(200).send({
-    save: saveLog,
-    err: errLog,
-    sales_no: sales_no,
-  });
+  return res.status(200).send({ errLog: errLog });
 });
+
+
 
 module.exports = router;
