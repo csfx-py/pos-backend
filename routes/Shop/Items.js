@@ -707,7 +707,7 @@ router.get("/todays-purchase", async (req, res) => {
     const sales = await pool.query(
       `SELECT pd.name, p.price, p.qty_case, p.qty_item
       FROM purchase p 
-      left join products pd on pd.id = s.products_id
+      left join products pd on pd.id = p.products_id
       where shops_id=$1 and purchase_date=CURRENT_DATE`,
       [shops_id]
     );
