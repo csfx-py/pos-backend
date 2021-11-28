@@ -203,7 +203,7 @@ CREATE TABLE IF NOT EXISTS invoices (
     qty INTEGER NOT NULL,
     price DECIMAL(10, 2) NOT NULL,
     total DECIMAL(10, 2) NOT NULL,
-    transaction_type VARCHAR(255) DEFAULT 'cash' NOT NULL,
+    transaction_type VARCHAR(255) DEFAULT 'Cash' NOT NULL,
     inserted_at DATE DEFAULT CURRENT_DATE NOT NULL,
     CONSTRAINT products_id FOREIGN KEY(products_id) REFERENCES products(id) ON DELETE
     SET NULL,
