@@ -321,9 +321,8 @@ router.post("/sale", async (req, res) => {
         inserted_at = CURRENT_DATE`,
         [shops_id]
       );
-      sales_no = `${date.getFullYear()}${date.getMonth()}${date.getDate()}${
-        sales_count.rows[0].count + 1
-      }`;
+      sales_no = `${date.getFullYear()}${date.getMonth()}${date.getDate()}${sales_count.rows[0].count + 1
+        }`;
 
       const brokenData = await splitInvoice(items);
       // console.log("\n\nbroken data : \n\n", brokenData);
@@ -542,9 +541,8 @@ router.post("/blkSales", async (req, res) => {
               inserted_at = CURRENT_DATE`,
               [shops_id]
             );
-            sales_no = `${date.getFullYear()}${date.getMonth()}${date.getDate()}${
-              sales_count.rows[0].count + 1
-            }`;
+            sales_no = `${date.getFullYear()}${date.getMonth()}${date.getDate()}${sales_count.rows[0].count + 1
+              }`;
             // console.log("9 sales_no: ", sales_no);
             let i = 0;
             while (i < brokenData.length) {
@@ -707,7 +705,10 @@ router.get("/todays-purchase", async (req, res) => {
   const { shops_id } = req.query;
   try {
     const sales = await pool.query(
-      `SELECT * FROM purchase where shops_id=$1 and purchase_date=CURRENT_DATE`,
+      `SELECT pd.name, p.price, p.qty_case, p.qty_item
+      FROM purchase p 
+      left join products pd on pd.id = p.products_id
+      where shops_id=$1 and purchase_date=CURRENT_DATE`,
       [shops_id]
     );
     if (sales.rowCount) {
@@ -732,7 +733,10 @@ router.get("/todays-sales", async (req, res) => {
   const { shops_id } = req.query;
   try {
     const sales = await pool.query(
-      `SELECT * FROM sales where shops_id=$1 and sales_date=CURRENT_DATE`,
+      `SELECT pd.name, s.qty, s.price, s.qty_cash, s.qty_card, s.qty_upi
+      FROM sales s
+      left join products pd on pd.id = p.products_id
+      where shops_id=$1 and sales_date=CURRENT_DATE`,
       [shops_id]
     );
     if (sales.rowCount) {
