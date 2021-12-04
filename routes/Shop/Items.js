@@ -701,10 +701,11 @@ router.post("/blkSales", async (req, res) => {
 });
 
 // @route   GET shop/todays-purchase?shops_id=$1
-router.get("/todays-purchase", async (req, res) => {
-  const { shops_id, date } = req.query;
+router.post("/todays-purchase", async (req, res) => {
+  const { shops_id } = req.query;
+  const { date } = req.body;
   try {
-    if (!date.length) {
+    if (date.length) {
       const purchase = await pool.query(
         `SELECT pd.name, p.price, p.qty_case, p.qty_item
          FROM purchase p
@@ -714,7 +715,7 @@ router.get("/todays-purchase", async (req, res) => {
       );
       if (purchase.rowCount) {
         return res.status(200).send({
-          purchase: todaysPurchase.rows,
+          purchase: purchase.rows,
         });
       } else {
         return res.status(404).send({
@@ -724,14 +725,14 @@ router.get("/todays-purchase", async (req, res) => {
     } else {
       const purchase = await pool.query(
         `SELECT pd.name, p.price, p.qty_case, p.qty_item
-      FROM purchase p 
-      left join products pd on pd.id = p.products_id
-      where shops_id=$1 and purchase_date=CURRENT_DATE`,
+        FROM purchase p 
+        left join products pd on pd.id = p.products_id
+        where shops_id=$1 and purchase_date=CURRENT_DATE`,
         [shops_id]
       );
-      if (todaysPurchase.rowCount) {
+      if (purchase.rowCount) {
         return res.status(200).send({
-          purchase: todaysPurchase.rows,
+          purchase: purchase.rows,
         });
       } else {
         return res.status(404).send({
@@ -748,10 +749,11 @@ router.get("/todays-purchase", async (req, res) => {
 });
 
 // @route   GET shop/todays-sales?shops_id=$1
-router.get("/todays-sales", async (req, res) => {
-  const { shops_id, date } = req.query;
+router.post("/todays-sales", async (req, res) => {
+  const { shops_id } = req.query;
+  const { date } = req.body;
   try {
-    if (!date.length) {
+    if (date.length) {
       const sales = await pool.query(
         `SELECT pd.name, s.qty, s.price, s.qty_cash, s.qty_card, s.qty_upi
          FROM sales s
@@ -771,9 +773,9 @@ router.get("/todays-sales", async (req, res) => {
     } else {
       const sales = await pool.query(
         `SELECT pd.name, s.qty, s.price, s.qty_cash, s.qty_card, s.qty_upi
-      FROM sales s
-      left join products pd on pd.id = s.products_id
-      where shops_id=$1 and sales_date=CURRENT_DATE`,
+        FROM sales s
+        left join products pd on pd.id = s.products_id
+        where shops_id=$1 and sales_date=CURRENT_DATE`,
         [shops_id]
       );
       if (sales.rowCount) {
