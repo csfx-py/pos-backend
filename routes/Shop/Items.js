@@ -702,8 +702,7 @@ router.post("/blkSales", async (req, res) => {
 
 // @route   GET shop/todays-purchase?shops_id=$1
 router.post("/todays-purchase", async (req, res) => {
-  const { shops_id } = req.query;
-  const { date } = req.body;
+  const { shops_id, date } = req.body;
   try {
     if (date.length) {
       const purchase = await pool.query(
@@ -750,8 +749,7 @@ router.post("/todays-purchase", async (req, res) => {
 
 // @route   GET shop/todays-sales?shops_id=$1
 router.post("/todays-sales", async (req, res) => {
-  const { shops_id } = req.query;
-  const { date } = req.body;
+  const { shops_id, date } = req.body;
   try {
     if (date.length) {
       const sales = await pool.query(
