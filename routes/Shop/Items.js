@@ -721,23 +721,6 @@ router.post("/todays-purchase", async (req, res) => {
           purchase: [],
         });
       }
-    } else {
-      const purchase = await pool.query(
-        `SELECT pd.name, p.price, p.qty_case, p.qty_item
-        FROM purchase p 
-        left join products pd on pd.id = p.products_id
-        where shops_id=$1 and purchase_date=CURRENT_DATE`,
-        [shops_id]
-      );
-      if (purchase.rowCount) {
-        return res.status(200).send({
-          purchase: purchase.rows,
-        });
-      } else {
-        return res.status(404).send({
-          purchase: [],
-        });
-      }
     }
   } catch (err) {
     console.log("err: ", err);
@@ -747,7 +730,7 @@ router.post("/todays-purchase", async (req, res) => {
   }
 });
 
-// @route   GET shop/todays-sales?shops_id=$1
+// @route   GET shop/todays-sales
 router.post("/todays-sales", async (req, res) => {
   const { shops_id, date } = req.body;
   try {
@@ -768,13 +751,58 @@ router.post("/todays-sales", async (req, res) => {
           sales: [],
         });
       }
-    } else {
+    }
+  } catch (err) {
+    console.log("err: ", err);
+    return res.status(500).send({
+      sales: "No sales found",
+    });
+  }
+});
+
+
+// @route   GET shop/todays-purchase?shops_id=$1
+router.post("/purchase-report", async (req, res) => {
+  const { shops_id, from_date, to_date } = req.body;
+  try {
+    if (date.length) {
+      const purchase = await pool.query(
+        `SELECT pd.name, p.price, p.qty_case, p.qty_item
+         FROM purchase p
+         left join products pd on pd.id = p.products_id
+         WHERE p.shops_id = $1 and p.purchase_date between $2 and $3`,
+        [shops_id, from_date, to_date]
+      );
+      if (purchase.rowCount) {
+        return res.status(200).send({
+          purchase: purchase.rows,
+        });
+      } else {
+        return res.status(404).send({
+          purchase: [],
+        });
+      }
+    }
+  } catch (err) {
+    console.log("err: ", err);
+    return res.status(100).send({
+      purchase: "No purchase found",
+    });
+  }
+});
+
+
+// @route   GET shop/todays-sales
+router.post("/sales-report", async (req, res) => {
+  const { shops_id, from_date, to_date } = req.body;
+  try {
+    if (date.length) {
       const sales = await pool.query(
         `SELECT pd.name, s.qty, s.price, s.qty_cash, s.qty_card, s.qty_upi
-        FROM sales s
-        left join products pd on pd.id = s.products_id
-        where shops_id=$1 and sales_date=CURRENT_DATE`,
-        [shops_id]
+         FROM sales s
+         left join products pd on pd.id = s.products_id
+         WHERE s.shops_id = $1 and s.sales_date between $2 and $3`,
+        [shops_id, from_date, to_date]
       );
       if (sales.rowCount) {
         return res.status(200).send({
