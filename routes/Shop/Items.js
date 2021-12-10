@@ -826,7 +826,11 @@ router.post("/invoices", async (req, res) => {
   const { shops_id } = req.body;
   try {
     const invoices = await pool.query(
-      `SELECT * FROM invoices WHERE shops_id = $1`,
+      `SELECT i.sales_no, i.invoice_date, i.invoice_number,
+      p.name, i.qty, i.price, i.total
+      FROM invoices i
+      left join products p on p.id=i.products_id
+      WHERE shops_id = $1`,
       [shops_id]
     );
     if (invoices.rowCount) {
