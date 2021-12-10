@@ -763,7 +763,7 @@ router.post("/todays-sales", async (req, res) => {
 
 // @route   GET shop/todays-purchase?shops_id=$1
 router.post("/purchase-report", async (req, res) => {
-  const { shops_id, from_date, to_date } = req.body;
+  const { shops_id, sDate, eDate } = req.body;
   try {
     if (date.length) {
       const purchase = await pool.query(
@@ -771,7 +771,7 @@ router.post("/purchase-report", async (req, res) => {
          FROM purchase p
          left join products pd on pd.id = p.products_id
          WHERE p.shops_id = $1 and p.purchase_date between $2 and $3`,
-        [shops_id, from_date, to_date]
+        [shops_id, sDate, eDate]
       );
       if (purchase.rowCount) {
         return res.status(200).send({
@@ -791,10 +791,9 @@ router.post("/purchase-report", async (req, res) => {
   }
 });
 
-
 // @route   GET shop/todays-sales
 router.post("/sales-report", async (req, res) => {
-  const { shops_id, from_date, to_date } = req.body;
+  const { shops_id, sDate, eDate } = req.body;
   try {
     if (date.length) {
       const sales = await pool.query(
@@ -802,7 +801,7 @@ router.post("/sales-report", async (req, res) => {
          FROM sales s
          left join products pd on pd.id = s.products_id
          WHERE s.shops_id = $1 and s.sales_date between $2 and $3`,
-        [shops_id, from_date, to_date]
+        [shops_id, sDate, eDate]
       );
       if (sales.rowCount) {
         return res.status(200).send({
@@ -818,6 +817,31 @@ router.post("/sales-report", async (req, res) => {
     console.log("err: ", err);
     return res.status(500).send({
       sales: "No sales found",
+    });
+  }
+});
+
+// @route   GET shop/invoices
+router.post("/invoices", async (req, res) => {
+  const { shops_id } = req.body;
+  try {
+    const invoices = await pool.query(
+      `SELECT * FROM invoices WHERE shops_id = $1`,
+      [shops_id]
+    );
+    if (invoices.rowCount) {
+      return res.status(200).send({
+        invoices: invoices.rows,
+      });
+    } else {
+      return res.status(404).send({
+        invoices: [],
+      });
+    }
+  } catch (err) {
+    console.log("err: ", err);
+    return res.status(500).send({
+      invoices: "No invoices found",
     });
   }
 });
