@@ -821,7 +821,37 @@ router.post("/sales-report", async (req, res) => {
   }
 });
 
-// @route   GET shop/invoices
+// @route   POST shop/invoices
+router.post("/invoice", async (req, res) => {
+  const { sales_no } = req.query;
+  const { shops_id } = req.body;
+  try {
+    const invoices = await pool.query(
+      `SELECT i.sales_no, i.invoice_date, i.invoice_number,
+      p.name, i.qty, i.price, i.total
+      FROM invoices i
+      left join products p on p.id=i.products_id
+      WHERE i.shops_id = $1 AND i.sales_no = $2`,
+      [shops_id, sales_no]
+    );
+    if (invoices.rowCount) {
+      return res.status(200).send({
+        invoices: invoices.rows,
+      });
+    } else {
+      return res.status(404).send({
+        invoices: [],
+      });
+    }
+  } catch (err) {
+    console.log("err: ", err);
+    return res.status(500).send({
+      invoices: "No invoices found",
+    });
+  }
+});
+
+// @route   POST shop/invoices
 router.post("/invoices", async (req, res) => {
   const { shops_id } = req.body;
   try {
@@ -849,5 +879,6 @@ router.post("/invoices", async (req, res) => {
     });
   }
 });
+
 
 module.exports = router;
