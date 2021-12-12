@@ -26,7 +26,7 @@ module.exports = async (fullData) => {
       }
       brokenItem.qty += 1;
       item.qty -= 1;
-      brokenItem.total = brokenItem.price * brokenItem.qty;
+      brokenItem.total += item.price;
       cumulative += item.price;
 
     }
