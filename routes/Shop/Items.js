@@ -333,17 +333,18 @@ router.post("/sale", async (req, res) => {
         // console.log(`\n\nbroken loop ${i} : \n`, brokenData[i]);
         const invoiceList = await pool.query(
           `SELECT * FROM invoices
-          WHERE invoice_number = $1 and
+          WHERE shops_id = $1 and
           invoice_date = CURRENT_DATE`,
           [shops_id]
         );
         for (j = 0; j < data.length; j++) {
+          // invoice ID in formate yyyy-mm-dd-shop-invoice_no
+          const invoice_number = `${date.getFullYear()}${date.getMonth()}${date.getDate()}-${shops_id}-${invoiceList.rowCount + 1}`;
+
           console.log(`\n\t3 broken Data ${j} : \n\t`, data[j]);
           console.log(
             `\nsales_no: ${sales_no},\ninvoice_number: ${invoice_number},\nshops_id: ${shops_id},\nusers_id: ${users_id},\nproducts_id: ${data[j].products_id},\nqty: ${data[j].qty},\nprice: ${data[j].price},\ntotal: ${data[j].total},\ntransaction_type: ${transaction_type}\n\n`
           );
-          // invoice ID in formate yyyy-mm-dd-shop-invoice_no
-          const invoice_number = `${date.getFullYear()}${date.getMonth()}${date.getDate()}-${shops_id}-${invoiceList.rowCount + 1}`;
           if (data[j].qty <= 0) {
             continue;
           }
