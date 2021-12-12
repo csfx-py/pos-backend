@@ -10,7 +10,7 @@ module.exports = async (fullData) => {
 
     if (item.price >= maxTotal) {
       for (let j = 1; j <= item.qty; j++) {
-        result.push([{ ...item, qty: 1 }]);
+        result.push([{ ...item, qty: 1, total: item.price }]);
       }
       continue;
     }
