@@ -15,21 +15,24 @@ module.exports = async (fullData) => {
       continue;
     }
 
-    let brokenItem = { ...item, qty: 0 };
+    let brokenItem = { ...item, qty: 1 };
     while (item.qty) {
       if (cumulative + item.price > maxTotal) {
         newinvoice.push(brokenItem);
         result.push(newinvoice);
         newinvoice = [];
         cumulative = 0;
-        brokenItem = { ...item, qty: 0 };
+        brokenItem = { ...item, qty: 1 };
       }
       brokenItem.qty += 1;
       item.qty -= 1;
       brokenItem.total = brokenItem.price * brokenItem.qty;
       cumulative += item.price;
+
     }
-    newinvoice.push(brokenItem);
+    if (brokenItem.qty < 0) {
+      newinvoice.push(brokenItem);
+    }
   }
   if (newinvoice.length) {
     result.push(newinvoice);
