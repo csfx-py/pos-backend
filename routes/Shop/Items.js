@@ -765,7 +765,7 @@ router.post("/todays-sales", async (req, res) => {
 router.post("/purchase-report", async (req, res) => {
   const { shops_id, sDate, eDate } = req.body;
   try {
-    if (date.length) {
+    if (sDate.length && eDate.length) {
       const purchase = await pool.query(
         `SELECT pd.name, p.price, p.qty_case, p.qty_item
          FROM purchase p
@@ -795,7 +795,7 @@ router.post("/purchase-report", async (req, res) => {
 router.post("/sales-report", async (req, res) => {
   const { shops_id, sDate, eDate } = req.body;
   try {
-    if (date.length) {
+    if (sDate.length && eDate.length) {
       const sales = await pool.query(
         `SELECT pd.name, s.qty, s.price, s.qty_cash, s.qty_card, s.qty_upi
          FROM sales s
