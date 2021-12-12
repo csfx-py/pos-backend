@@ -347,6 +347,9 @@ router.post("/sale", async (req, res) => {
           console.log(
             `\nsales_no: ${sales_no},\ninvoice_number: ${invoice_number},\nshops_id: ${shops_id},\nusers_id: ${users_id},\nproducts_id: ${data[j].products_id},\nqty: ${data[j].qty},\nprice: ${data[j].price},\ntotal: ${data[j].total},\ntransaction_type: ${transaction_type}\n\n`
           );
+          if (data[j].qty <= 0) {
+            continue;
+          }
           // saveLog.push(data[j].products_id);
           const invoiceSaved = await pool.query(
             `INSERT INTO invoices( sales_no, invoice_number, shops_id, users_id, products_id, qty, price, total, transaction_type)
