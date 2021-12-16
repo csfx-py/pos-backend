@@ -881,5 +881,50 @@ router.post("/invoices", async (req, res) => {
   }
 });
 
+// @route   POST shop/invoices/:id
+router.post("/product/invoices", async (req, res) => {
+  // {
+  //   "id":298,
+  //   "shops_id":1,
+  //   "sDate":"2021-06-01",
+  //   "eDate":"{{today}}"
+  // }
+  const { id, shops_id, sDate, eDate } = req.body;
+  try {
+    const sales = await pool.query(
+      `SELECT p.name, s.sales_date, s.qty, s.price,
+      s.qty_cash, s.qty_card, s.qty_upi
+      FROM sales s
+      left join products p on p.id=s.products_id
+      WHERE s.shops_id = $1 and p.id = $2 and
+      s.sales_date between $3 and $4`,
+      [shops_id, id, sDate, eDate]
+    );
+    const purchase = await pool.query(
+      `SELECT pd.name, p.price, p.qty_case, p.qty_item
+      FROM purchase p
+      left join products pd on pd.id = p.products_id
+      WHERE p.shops_id = $1 and p.products_id = $2 and
+      p.purchase_date between $3 and $4`,
+      [shops_id, id, sDate, eDate]
+    );
+    if (sales.rowCount || purchase.rowCount) {
+      return res.status(200).send({
+        sales: sales.rows,
+        purchase: purchase.rows,
+      });
+    } else {
+      return res.status(404).send({
+        sales: [],
+        purchase: [],
+      });
+    }
+  } catch (err) {
+    console.log("err: ", err);
+    return res.status(500).send({
+      invoices: "No invoices found",
+    });
+  }
+});
 
 module.exports = router;
