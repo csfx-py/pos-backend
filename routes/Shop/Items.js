@@ -927,4 +927,33 @@ router.post("/product/invoices", async (req, res) => {
   }
 });
 
+// @route   POST shop/invoices/by-brand
+router.post("/invoices/by-brand", async (req, res) => {
+  const { shops_id, brands_id, sDate, eDate } = req.body;
+  try {
+    const invoices = await pool.query(
+      `SELECT b.name, p.name, s.sales_date, s.qty, s.price
+      FROM sales s
+      left join products p on s.products_id = p.id
+      left join brands b on p.brands_id = b.id
+      WHERE shops_id=$1 AND b.id=$2 AND s.sales_date between $3 and $4`,
+      [shops_id, brands_id, sDate, eDate]
+    );
+    if (invoices.rowCount) {
+      return res.status(200).send({
+        invoices: invoices.rows,
+      });
+    } else {
+      return res.status(404).send({
+        invoices: [],
+      });
+    }
+  } catch (err) {
+    console.log("err: ", err);
+    return res.status(500).send({
+      invoices: "No invoices found",
+    });
+  }
+});
+
 module.exports = router;
