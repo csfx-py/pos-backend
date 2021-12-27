@@ -892,7 +892,7 @@ router.post("/product/invoices", async (req, res) => {
   const { id, shops_id, sDate, eDate } = req.body;
   try {
     const sales = await pool.query(
-      `SELECT p.name, s.sales_date, s.qty, s.price,
+      `SELECT p.name, s.sales_date, s.price, s.qty,
       s.qty_cash, s.qty_card, s.qty_upi
       FROM sales s
       left join products p on p.id=s.products_id
@@ -901,7 +901,7 @@ router.post("/product/invoices", async (req, res) => {
       [shops_id, id, sDate, eDate]
     );
     const purchase = await pool.query(
-      `SELECT pd.name, p.price, p.qty_case, p.qty_item
+      `SELECT pd.name, p.purchase_date, p.price, p.qty_case, p.qty_item
       FROM purchase p
       left join products pd on pd.id = p.products_id
       WHERE p.shops_id = $1 and p.products_id = $2 and
