@@ -321,8 +321,9 @@ router.post("/sale", async (req, res) => {
         inserted_at = CURRENT_DATE`,
         [shops_id]
       );
-      sales_no = `${date.getFullYear()}${date.getMonth()}${date.getDate()}${sales_count.rows[0].count + 1
-        }`;
+      sales_no = `${date.getFullYear()}${date.getMonth()}${date.getDate()}${
+        sales_count.rows[0].count + 1
+      }`;
 
       const brokenData = await splitInvoice(items);
       // console.log("\n\nbroken data : \n\n", brokenData);
@@ -339,7 +340,9 @@ router.post("/sale", async (req, res) => {
         );
         for (j = 0; j < data.length; j++) {
           // invoice ID in formate yyyy-mm-dd-shop-invoice_no
-          const invoice_number = `${date.getFullYear()}${date.getMonth()}${date.getDate()}-${shops_id}-${invoiceList.rowCount + 1}`;
+          const invoice_number = `${date.getFullYear()}${date.getMonth()}${date.getDate()}-${shops_id}-${
+            invoiceList.rowCount + 1
+          }`;
 
           console.log(`\n\t3 broken Data ${j} : \n\t`, data[j]);
           console.log(
@@ -464,6 +467,7 @@ router.post("/sale", async (req, res) => {
 // blk sales route
 router.post("/blkSales", async (req, res) => {
   //   data featched:{
+  //     "date": "2020-04-01",
   //     "shops_id":1,
   //     "users_id":1,
   //     "items":[
@@ -485,11 +489,11 @@ router.post("/blkSales", async (req, res) => {
   //     ]
   // }
 
-  const { shops_id, users_id, items } = req.body;
+  const { shops_id, users_id, items, sales_date } = req.body;
   let saveLog = [];
   let errLog = [];
   let sales_no = "";
-  const date = new Date();
+  const date = new Date(sales_date);
   if (req.body && items.length > 0) {
     try {
       console.log("1 ");
@@ -503,7 +507,7 @@ router.post("/blkSales", async (req, res) => {
           `SELECT stock FROM stock WHERE products_id = $1 and shops_id = $2`,
           [products_id, shops_id]
         );
-        console.log("2 itemList: ", itemList);
+        console.log("2 itemList: ", itemList.rows[0]);
         console.log(qty);
         if (itemList.rowCount && qty < itemList.rows[0].stock) {
           try {
@@ -539,11 +543,13 @@ router.post("/blkSales", async (req, res) => {
             const sales_count = await pool.query(
               `SELECT COUNT( DISTINCT sales_no) AS count FROM invoices
               WHERE shops_id = $1 and
-              inserted_at = CURRENT_DATE`,
-              [shops_id]
+              inserted_at = $2`,
+              [shops_id, date]
             );
-            sales_no = `${date.getFullYear()}${date.getMonth()}${date.getDate()}${sales_count.rows[0].count + 1
-              }`;
+            console.log(sales_date);
+            sales_no = `${date.getFullYear()}${date.getMonth()}${date.getDate()}${
+              sales_count.rows[0].count + 1
+            }`;
             // console.log("9 sales_no: ", sales_no);
             let i = 0;
             while (i < brokenData.length) {
@@ -552,11 +558,11 @@ router.post("/blkSales", async (req, res) => {
               // console.log(`\n\nbroken loop ${i} : \n`, brokenData[i]);
               const invoiceList = await pool.query(
                 `SELECT COUNT( DISTINCT invoice_number) AS count FROM invoices
-                WHERE shops_id = $1 and invoice_date = CURRENT_DATE`,
-                [shops_id]
+                WHERE shops_id = $1 and invoice_date = $2`,
+                [shops_id, date]
               );
               // invoice ID in formate yyyy-mm-dd-shop-invoice_no
-              const invoice_number = `${new Date()
+              const invoice_number = `${new Date(sales_date)
                 .toISOString()
                 .slice(0, 10)}${shops_id}${invoiceList.rows[0].count + 1}`;
               // console.log("11 invoice_number: ", invoice_number);
@@ -567,11 +573,13 @@ router.post("/blkSales", async (req, res) => {
                 );
                 // saveLog.push(data[j].products_id);
                 const invoiceSaved = await pool.query(
-                  `INSERT INTO invoices( sales_no, invoice_number, shops_id, users_id, products_id, qty, price, total, transaction_type)
-                  VALUES ( $1, $2, $3, $4, $5, $6, $7, $8, $9 )
+                  `INSERT INTO invoices( sales_no, invoice_date, invoice_number, 
+                    shops_id, users_id, products_id, qty, price, total, transaction_type)
+                  VALUES ( $1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
                   RETURNING sales_no`,
                   [
                     sales_no,
+                    date,
                     invoice_number,
                     shops_id,
                     users_id,
@@ -600,9 +608,11 @@ router.post("/blkSales", async (req, res) => {
                   }
                   console.log("14 ");
                   const salesQty = await pool.query(
-                    `SELECT qty, qty_cash, qty_card, qty_upi FROM sales WHERE products_id = $1 AND shops_id = $2 and sales_date=CURRENT_DATE`,
-                    [data[j].products_id, shops_id]
+                    `SELECT qty, qty_cash, qty_card, qty_upi FROM sales 
+                    WHERE products_id = $1 AND shops_id = $2 and sales_date=$3`,
+                    [data[j].products_id, shops_id, date]
                   );
+                  console.log("-----15 ", salesQty.rowCount);
                   if (salesQty.rowCount) {
                     const newQty = salesQty.rows[0].qty + data[j].qty;
                     console.log("15 newQty: ", newQty);
@@ -612,8 +622,15 @@ router.post("/blkSales", async (req, res) => {
                       );
                       console.log("16 newCashQty: ", newCashQty);
                       const updateSales = await pool.query(
-                        `UPDATE sales set qty = $1, qty_cash=$2 WHERE products_id = $3 AND shops_id = $4 AND sales_date=CURRENT_DATE`,
-                        [newQty, newCashQty, data[j].products_id, shops_id]
+                        `UPDATE sales set qty = $1, qty_cash=$2 WHERE products_id = $3 
+                        AND shops_id = $4 AND sales_date=$5`,
+                        [
+                          newQty,
+                          newCashQty,
+                          data[j].products_id,
+                          shops_id,
+                          date,
+                        ]
                       );
                     } else if (data[j].transaction_type == "Card") {
                       const newCardQty = parseInt(
@@ -621,8 +638,15 @@ router.post("/blkSales", async (req, res) => {
                       );
                       console.log("17 newCardQty: ", newCardQty);
                       const updateSales = await pool.query(
-                        `UPDATE sales set qty = $1, qty_card=$2 WHERE products_id = $3 AND shops_id = $4 AND sales_date=CURRENT_DATE`,
-                        [newQty, newCardQty, data[j].products_id, shops_id]
+                        `UPDATE sales set qty = $1, qty_card=$2 WHERE products_id = $3 
+                        AND shops_id = $4 AND sales_date=$5`,
+                        [
+                          newQty,
+                          newCardQty,
+                          data[j].products_id,
+                          shops_id,
+                          date,
+                        ]
                       );
                     } else if (data[j].transaction_type == "UPI") {
                       const newUPIQty = parseInt(
@@ -630,8 +654,9 @@ router.post("/blkSales", async (req, res) => {
                       );
                       console.log("18 newUPIQty: ", newUPIQty);
                       const updateSales = await pool.query(
-                        `UPDATE sales set qty = $1, qty_upi = $2 WHERE products_id = $3 AND shops_id = $4 AND sales_date=CURRENT_DATE`,
-                        [newQty, newUPIQty, data[j].products_id, shops_id]
+                        `UPDATE sales set qty = $1, qty_upi = $2 WHERE products_id = $3 AND shops_id = $4 
+                        AND sales_date=$5`,
+                        [newQty, newUPIQty, data[j].products_id, shops_id, date]
                       );
                     }
                   } else {
@@ -647,9 +672,11 @@ router.post("/blkSales", async (req, res) => {
                       upi_data = data[j].qty;
                     }
                     const addSales = await pool.query(
-                      `INSERT INTO sales( sales_date, shops_id, products_id, qty, price, qty_cash, qty_card, qty_upi)
-                      VALUES ( CURRENT_DATE, $1, $2, $3, $4, $5, $6, $7 )`,
+                      `INSERT INTO sales( sales_date, shops_id, products_id, qty, price, 
+                        qty_cash, qty_card, qty_upi)
+                      VALUES ( $1, $2, $3, $4, $5, $6, $7, $8 )`,
                       [
+                        date,
                         shops_id,
                         data[j].products_id,
                         data[j].qty,
@@ -760,7 +787,6 @@ router.post("/todays-sales", async (req, res) => {
     });
   }
 });
-
 
 // @route   GET shop/todays-purchase?shops_id=$1
 router.post("/purchase-report", async (req, res) => {
@@ -892,8 +918,7 @@ router.post("/product/invoices", async (req, res) => {
   const { id, shops_id, sDate, eDate } = req.body;
   try {
     const sales = await pool.query(
-      `SELECT p.name, s.sales_date, s.price, s.qty,
-      s.qty_cash, s.qty_card, s.qty_upi
+      `SELECT p.name, s.sales_date, s.qty
       FROM sales s
       left join products p on p.id=s.products_id
       WHERE s.shops_id = $1 and p.id = $2 and
@@ -901,7 +926,7 @@ router.post("/product/invoices", async (req, res) => {
       [shops_id, id, sDate, eDate]
     );
     const purchase = await pool.query(
-      `SELECT pd.name, p.purchase_date, p.price, p.qty_case, p.qty_item
+      `SELECT pd.name, p.purchase_date, p.qty_case * pd.case_qty +  p.qty_item as qty
       FROM purchase p
       left join products pd on pd.id = p.products_id
       WHERE p.shops_id = $1 and p.products_id = $2 and
