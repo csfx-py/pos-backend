@@ -213,7 +213,7 @@ CREATE TABLE IF NOT EXISTS invoices (
     SET NULL
 );
 
--- truncate stock restart IDENTITY;
+-- update stock set stock = 200 where true;
 -- truncate purchase restart IDENTITY;
 -- truncate sales restart IDENTITY;
 -- truncate invoices restart IDENTITY;
