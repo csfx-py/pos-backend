@@ -321,9 +321,9 @@ router.post("/sale", async (req, res) => {
         inserted_at = CURRENT_DATE`,
         [shops_id]
       );
-      sales_no = `${date.getFullYear()}${date.getMonth()}${date.getDate()}${
-        sales_count.rows[0].count + 1
-      }`;
+      sales_no = `${date.getFullYear()}${
+        parseInt(date.getMonth()) + 1
+      }${date.getDate()}${parseInt(sales_count.rows[0].count) + 1}`;
 
       const brokenData = await splitInvoice(items);
       // console.log("\n\nbroken data : \n\n", brokenData);
@@ -340,10 +340,9 @@ router.post("/sale", async (req, res) => {
         );
         for (j = 0; j < data.length; j++) {
           // invoice ID in formate yyyy-mm-dd-shop-invoice_no
-          const invoice_number = `${date.getFullYear()}${date.getMonth()}${date.getDate()}-${shops_id}-${
-            invoiceList.rowCount + 1
-          }`;
-
+          const invoice_number = `${new Date()
+            .toISOString()
+            .slice(0, 10)}${shops_id}${invoiceList.rowCount}`;
           console.log(`\n\t3 broken Data ${j} : \n\t`, data[j]);
           console.log(
             `\nsales_no: ${sales_no},\ninvoice_number: ${invoice_number},\nshops_id: ${shops_id},\nusers_id: ${users_id},\nproducts_id: ${data[j].products_id},\nqty: ${data[j].qty},\nprice: ${data[j].price},\ntotal: ${data[j].total},\ntransaction_type: ${transaction_type}\n\n`
@@ -547,10 +546,10 @@ router.post("/blkSales", async (req, res) => {
               [shops_id, date]
             );
             console.log(sales_date);
-            sales_no = `${date.getFullYear()}${date.getMonth()}${date.getDate()}${
-              sales_count.rows[0].count + 1
-            }`;
-            // console.log("9 sales_no: ", sales_no);
+            sales_no = `${date.getFullYear()}${
+              parseInt(date.getMonth()) + 1
+            }${date.getDate()}${parseInt(sales_count.rows[0].count) + 1}`;
+            console.log("9 sales_no: ", sales_count.rows[0]);
             let i = 0;
             while (i < brokenData.length) {
               // console.log(`10 ${i}brokenData: `, brokenData[i]);
@@ -564,7 +563,9 @@ router.post("/blkSales", async (req, res) => {
               // invoice ID in formate yyyy-mm-dd-shop-invoice_no
               const invoice_number = `${new Date(sales_date)
                 .toISOString()
-                .slice(0, 10)}${shops_id}${invoiceList.rows[0].count + 1}`;
+                .slice(0, 10)}${shops_id}${
+                parseInt(invoiceList.rows[0].count) + 1
+              }`;
               // console.log("11 invoice_number: ", invoice_number);
               for (j = 0; j < data.length; j++) {
                 console.log(`\n\n12 broken Data ${j} : \n`, data[j]);
