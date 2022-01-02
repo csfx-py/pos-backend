@@ -212,3 +212,8 @@ CREATE TABLE IF NOT EXISTS invoices (
         CONSTRAINT shops_id FOREIGN KEY(shops_id) REFERENCES shops(id) ON DELETE
     SET NULL
 );
+
+-- truncate stock restart IDENTITY;
+-- truncate purchase restart IDENTITY;
+-- truncate sales restart IDENTITY;
+-- truncate invoices restart IDENTITY;
