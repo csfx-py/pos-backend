@@ -496,6 +496,16 @@ router.post("/blkSales", async (req, res) => {
     try {
       console.log("1 ");
       await pool.query("BEGIN");
+      const sales_count = await pool.query(
+        `SELECT COUNT( DISTINCT sales_no) AS count FROM invoices
+        WHERE shops_id = $1 and
+        inserted_at = $2`,
+        [shops_id, date]
+      );
+      console.log(sales_date);
+      sales_no = `${date.getFullYear()}${parseInt(date.getMonth()) + 1
+        }${date.getDate()}${parseInt(sales_count.rows[0].count) + 1}`;
+      console.log("9 sales_no: ", sales_count.rows[0]);
       for (let i = 0; i < items.length; i++) {
         const { products_id, price, qty_cash, qty_card, qty_upi } = items[i];
         console.log(items[i]);
@@ -538,16 +548,6 @@ router.post("/blkSales", async (req, res) => {
               brokenData = [...brokenData, ...upi_Data];
             }
             console.log("\n\n\n8 brokenData:\n", brokenData);
-            const sales_count = await pool.query(
-              `SELECT COUNT( DISTINCT sales_no) AS count FROM invoices
-              WHERE shops_id = $1 and
-              inserted_at = $2`,
-              [shops_id, date]
-            );
-            console.log(sales_date);
-            sales_no = `${date.getFullYear()}${parseInt(date.getMonth()) + 1
-              }${date.getDate()}${parseInt(sales_count.rows[0].count) + 1}`;
-            console.log("9 sales_no: ", sales_count.rows[0]);
             let i = 0;
             while (i < brokenData.length) {
               // console.log(`10 ${i}brokenData: `, brokenData[i]);
