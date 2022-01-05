@@ -202,6 +202,7 @@ CREATE TABLE IF NOT EXISTS invoices (
     products_id INTEGER NOT NULL,
     qty INTEGER NOT NULL,
     price DECIMAL(10, 2) NOT NULL,
+    discount DECIMAL(10, 2) NOT NULL,
     total DECIMAL(10, 2) NOT NULL,
     transaction_type VARCHAR(255) DEFAULT 'Cash' NOT NULL,
     inserted_at DATE DEFAULT CURRENT_DATE NOT NULL,
