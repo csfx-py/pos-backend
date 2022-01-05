@@ -1,6 +1,7 @@
 const router = require("express").Router();
 const pool = require("../../db");
 const splitInvoice = require("../../utils/splitInvoice");
+const toISOLocal = require("../../utils/toIsoLocal");
 
 router.get("/items", async (req, res) => {
   const { shops_id } = req.query;
@@ -296,7 +297,7 @@ router.post("/sale", async (req, res) => {
   if (fdata && items.length > 0) {
     try {
       for (i = 0; i < items.length; i++) {
-        const { products_id, qty, price } = items[i];
+        const { products_id, qty, price, discount } = items[i];
         const itemList = await pool.query(
           `SELECT stock FROM stock WHERE products_id = $1 and shops_id = $2`,
           [products_id, shops_id]
@@ -339,8 +340,7 @@ router.post("/sale", async (req, res) => {
         );
         for (j = 0; j < data.length; j++) {
           // invoice ID in formate yyyy-mm-dd-shop-invoice_no
-          const invoice_number = `${new Date()
-            .toISOString()
+          const invoice_number = `${toISOLocal(new Date())
             .slice(0, 10)}-${shops_id}-${invoiceList.rowCount}`;
           console.log(`\n\t3 broken Data ${j} : \n\t`, data[j]);
           console.log(
@@ -349,10 +349,12 @@ router.post("/sale", async (req, res) => {
           if (data[j].qty <= 0) {
             continue;
           }
+          data[j].total = parseInt(data[j].qty) * (parseFloat(data[j].price) - parseFloat(data[j].discount));
           // saveLog.push(data[j].products_id);
           const invoiceSaved = await pool.query(
-            `INSERT INTO invoices( sales_no, invoice_number, shops_id, users_id, products_id, qty, price, total, transaction_type)
-            VALUES ( $1, $2, $3, $4, $5, $6, $7, $8, $9 )
+            `INSERT INTO invoices( sales_no, invoice_number, shops_id, users_id, products_id, qty, price, 
+              discount, total, transaction_type)
+            VALUES ( $1, $2, $3, $4, $5, $6, $7, $8, $9, $10 )
             RETURNING sales_no`,
             [
               sales_no,
@@ -362,6 +364,7 @@ router.post("/sale", async (req, res) => {
               data[j].products_id,
               data[j].qty,
               data[j].price,
+              data[j].discount,
               data[j].total,
               transaction_type,
             ]
@@ -559,8 +562,7 @@ router.post("/blkSales", async (req, res) => {
                 [shops_id, date]
               );
               // invoice ID in formate yyyy-mm-dd-shop-invoice_no
-              const invoice_number = `${new Date(sales_date)
-                .toISOString()
+              const invoice_number = `${toISOLocal(new Date(sales_date))
                 .slice(0, 10)}-${shops_id}-${parseInt(invoiceList.rows[0].count) + 1
                 }`;
               // console.log("11 invoice_number: ", invoice_number);
@@ -572,8 +574,8 @@ router.post("/blkSales", async (req, res) => {
                 // saveLog.push(data[j].products_id);
                 const invoiceSaved = await pool.query(
                   `INSERT INTO invoices( sales_no, invoice_date, invoice_number, 
-                    shops_id, users_id, products_id, qty, price, total, transaction_type)
-                  VALUES ( $1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                    shops_id, users_id, products_id, qty, price, discount, total, transaction_type)
+                  VALUES ( $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
                   RETURNING sales_no`,
                   [
                     sales_no,
@@ -584,6 +586,7 @@ router.post("/blkSales", async (req, res) => {
                     data[j].products_id,
                     data[j].qty,
                     data[j].price,
+                    0,
                     data[j].total,
                     data[j].transaction_type,
                   ]
@@ -882,15 +885,16 @@ router.post("/invoices", async (req, res) => {
   try {
     const invoices = await pool.query(
       `SELECT i.sales_no, i.invoice_date, i.invoice_number,
-      p.name, i.qty, i.price, i.total
+      p.name, i.qty, i.price, i.total, i.discount
       FROM invoices i
       left join products p on p.id=i.products_id
-      WHERE shops_id = $1`,
+      WHERE shops_id = $1
+      ORDER BY i.invoice_date DESC, i.invoice_number DESC`,
       [shops_id]
     );
     if (invoices.rowCount) {
       return res.status(200).send({
-        invoices: invoices.rows,
+        invoices: [...invoices.rows],
       });
     } else {
       return res.status(404).send({
