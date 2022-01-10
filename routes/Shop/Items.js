@@ -58,7 +58,6 @@ router.post("/items", async (req, res) => {
       } = data[i];
       try {
         // begin transaction
-        await pool.query("BEGIN");
         const itemList = await pool.query(
           `insert into products( name, brands_id, categories_id, sizes_id, barcode, per_case, purchase_price, case_price, mrp, discount, mrp1, mrp2, mrp3, mrp4 )
           VALUES( $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14 )`,
