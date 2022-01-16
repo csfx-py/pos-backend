@@ -96,13 +96,13 @@ router.post("/stock", async (req, res) => {
   let saveLog = [];
   let errLog = [];
   if (data && data.length > 0) {
+    // begin transaction
+    await pool.query("BEGIN");
     for (i = 0; i < data.length; i++) {
       const { shops_id, product, stock } = data[i];
       try {
-        // begin transaction
-        await pool.query("BEGIN");
         const productId = await pool.query(
-          `select id from products where name=$1`,
+          `select id, purchase_price from products where name=$1`,
           [product]
         );
         const itemList = await pool.query(
@@ -110,9 +110,13 @@ router.post("/stock", async (req, res) => {
           VALUES( $1, $2, $3 ) RETURNING id`,
           [shops_id, productId.rows[0]?.id, stock]
         );
+        const productList = await pool.query(
+          `INSERT INTO purchase( products_id, shops_id, price, qty_item)        
+          VALUES ( $1, $2, $3, $4) RETURNING id`,
+          [productId.rows[0]?.id, shops_id, productId.rows[0]?.purchase_price, stock]
+        );
         if (itemList.rowCount) {
           saveLog.push({ itemList });
-          pool.query("COMMIT");
         }
       } catch (error) {
         console.log(error);
@@ -121,6 +125,7 @@ router.post("/stock", async (req, res) => {
         return res.status(500).send("Internal server error");
       }
     }
+    pool.query("COMMIT");
     return res.status(200).send({ saveLog, errLog });
   }
 });
