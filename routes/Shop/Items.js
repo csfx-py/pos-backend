@@ -117,15 +117,15 @@ router.post("/stock", async (req, res) => {
         );
         if (itemList.rowCount) {
           saveLog.push({ itemList });
+          pool.query("COMMIT");
         }
       } catch (error) {
         console.log(`${product} mismatch ------------`);
         console.log(error);
         pool.query("ROLLBACK");
-        errLog.push({ error });
+        errLog.push({ product });
       }
     }
-    pool.query("COMMIT");
     return res.status(200).send({ saveLog, errLog });
   }
 });
