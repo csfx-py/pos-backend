@@ -112,7 +112,7 @@ router.post("/stock", async (req, res) => {
         );
         const productList = await pool.query(
           `INSERT INTO purchase( products_id, shops_id, price, qty_item, qty_case)        
-          VALUES ( $1, $2, $3, $4) RETURNING id`,
+          VALUES ( $1, $2, $3, $4, $5) RETURNING id`,
           [productId.rows[0]?.id, shops_id, productId.rows[0]?.purchase_price, stock, 0]
         );
         if (itemList.rowCount) {
