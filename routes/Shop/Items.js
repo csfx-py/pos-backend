@@ -97,10 +97,10 @@ router.post("/stock", async (req, res) => {
   let errLog = [];
   if (data && data.length > 0) {
     // begin transaction
-    await pool.query("BEGIN");
     for (i = 0; i < data.length; i++) {
       const { shops_id, product, stock } = data[i];
       try {
+        await pool.query("BEGIN");
         const productId = await pool.query(
           `select id, purchase_price from products where name=$1`,
           [product]
@@ -111,9 +111,9 @@ router.post("/stock", async (req, res) => {
           [shops_id, productId.rows[0]?.id, stock]
         );
         const productList = await pool.query(
-          `INSERT INTO purchase( products_id, shops_id, price, qty_item)        
+          `INSERT INTO purchase( products_id, shops_id, price, qty_item, qty_case)        
           VALUES ( $1, $2, $3, $4) RETURNING id`,
-          [productId.rows[0]?.id, shops_id, productId.rows[0]?.purchase_price, stock]
+          [productId.rows[0]?.id, shops_id, productId.rows[0]?.purchase_price, stock, 0]
         );
         if (itemList.rowCount) {
           saveLog.push({ itemList });
