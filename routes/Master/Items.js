@@ -165,7 +165,6 @@ router.post("/products", async (req, res) => {
       console.log(error);
       await pool.query("ROLLBACK");
       errLog.push({ name });
-      return res.status(500).send("Internal server error");
     }
     return res.status(200).send({
       exist: existLog,
@@ -211,7 +210,6 @@ router.post("/xl-products", async (req, res) => {
         console.log(error);
         await pool.query("ROLLBACK");
         errLog.push({ name });
-        return res.status(500).send("Internal server error");
       }
     } return res.status(200).send({
       exist: existLog,
