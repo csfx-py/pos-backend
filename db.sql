@@ -168,54 +168,9 @@ insert into shops(name, license, price_to_use)
 values('shop1', 'dfs344sd', 'mrp2'),
     ('shop2', 'dasf3443fsd', 'mrp3'),
     ('shop3', 'sfg4dfg45db', 'mrp3');
-insert into products(
-        name,
-        brands_id,
-        categories_id,
-        sizes_id,
-        barcode,
-        case_qty,
-        purchase_price,
-        case_price,
-        mrp,
-        discount,
-        mrp1,
-        mrp2,
-        mrp3,
-        mrp4
-    )
-VALUES(
-        'BECKS ICE PREMIUM 500ML CAN',
-        1,
-        1,
-        11,
-        '1234567890',
-        24,
-        62.00,
-        1630.00,
-        70.00,
-        0.7,
-        70.00,
-        72.00,
-        75.00,
-        75.00
-    ),
-    (
-        'BECKS ICE PREMIUM 650ML',
-        1,
-        1,
-        12,
-        '1234567891',
-        12,
-        131.82,
-        1581.84,
-        145.00,
-        1.45,
-        145.00,
-        150.00,
-        150.00,
-        150.00
-    );
+insert into products( name, brands_id, categories_id, sizes_id, barcode, case_qty, purchase_price, case_price, mrp, discount, mrp1, mrp2, mrp3, mrp4 )
+VALUES( 'BECKS ICE PREMIUM 500ML CAN', 1, 1, 11, '1234567890', 24, 62.00, 1630.00, 70.00, 0.7, 70.00, 72.00, 75.00, 75.00 ),
+    ( 'BECKS ICE PREMIUM 650ML', 1, 1, 12, '1234567891', 12, 131.82, 1581.84, 145.00, 1.45, 145.00, 150.00, 150.00, 150.00 );
 -- CREATE sales table
 CREATE TABLE IF NOT EXISTS sales (
     id SERIAL PRIMARY KEY,
@@ -228,10 +183,8 @@ CREATE TABLE IF NOT EXISTS sales (
     qty_card INTEGER,
     qty_upi INTEGER,
     inserted_at DATE DEFAULT CURRENT_DATE NOT NULL,
-    CONSTRAINT products_id FOREIGN KEY(products_id) REFERENCES products(id) ON DELETE
-    SET NULL,
-        CONSTRAINT shops_id FOREIGN KEY(shops_id) REFERENCES shops(id) ON DELETE
-    SET NULL
+    CONSTRAINT products_id FOREIGN KEY(products_id) REFERENCES products(id) ON DELETE SET NULL,
+    CONSTRAINT shops_id FOREIGN KEY(shops_id) REFERENCES shops(id) ON DELETE SET NULL
 );
 -- CREATE invoices table
 CREATE TABLE IF NOT EXISTS invoices (
@@ -250,10 +203,8 @@ CREATE TABLE IF NOT EXISTS invoices (
     inserted_at DATE DEFAULT CURRENT_DATE NOT NULL,
     CONSTRAINT products_id FOREIGN KEY(products_id) REFERENCES products(id) ON DELETE
     SET NULL,
-        CONSTRAINT users_id FOREIGN KEY(users_id) REFERENCES users(id) ON DELETE
-    SET NULL,
-        CONSTRAINT shops_id FOREIGN KEY(shops_id) REFERENCES shops(id) ON DELETE
-    SET NULL
+    CONSTRAINT users_id FOREIGN KEY(users_id) REFERENCES users(id) ON DELETE SET NULL,
+    CONSTRAINT shops_id FOREIGN KEY(shops_id) REFERENCES shops(id) ON DELETE SET NULL
 );
 -- create dsr table
 CREATE TABLE IF NOT EXISTS dsr (
@@ -263,10 +214,8 @@ CREATE TABLE IF NOT EXISTS dsr (
     products_id INTEGER NOT NULL,
     open_qty INTEGER NOT NULL,
     close_qty INTEGER NOT NULL,
-    CONSTRAINT products_id FOREIGN KEY(products_id) REFERENCES products(id) ON DELETE
-    SET NULL,
-        CONSTRAINT shops_id FOREIGN KEY(shops_id) REFERENCES shops(id) ON DELETE
-    SET NULL
+    CONSTRAINT products_id FOREIGN KEY(products_id) REFERENCES products(id) ON DELETE SET NULL,
+    CONSTRAINT shops_id FOREIGN KEY(shops_id) REFERENCES shops(id) ON DELETE SET NULL
 );
 
 -- update stock set stock = 200 where true;
