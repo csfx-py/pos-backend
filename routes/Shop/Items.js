@@ -113,7 +113,13 @@ router.post("/stock", async (req, res) => {
         const productList = await pool.query(
           `INSERT INTO purchase( products_id, shops_id, price, qty_item, qty_case)        
           VALUES ( $1, $2, $3, $4, $5) RETURNING id`,
-          [productId.rows[0]?.id, shops_id, productId.rows[0]?.purchase_price, stock, 0]
+          [
+            productId.rows[0]?.id,
+            shops_id,
+            productId.rows[0]?.purchase_price,
+            stock,
+            0,
+          ]
         );
         if (itemList.rowCount) {
           saveLog.push({ itemList });
@@ -293,9 +299,9 @@ router.post("/sale", async (req, res) => {
   let qty_cash = 0,
     qty_card = 0,
     qty_upi = 0;
-    // console.log(data.length);
-    const { shops_id, users_id, transaction_type, items, sDate } = fdata;
-    const date = new Date(sDate || new Date());
+  // console.log(data.length);
+  const { shops_id, users_id, transaction_type, items, sDate } = fdata;
+  const date = new Date(sDate || new Date());
   // console.log(items);
   console.log("\n\n\n1 items:\n ", items);
   if (fdata && items.length > 0) {
@@ -326,8 +332,15 @@ router.post("/sale", async (req, res) => {
         inserted_at = $2`,
         [shops_id, date]
       );
-      sales_no = `${date.getFullYear()}${parseInt(date.getMonth()) + 1
-        }${date.getDate()}${parseInt(sales_count.rows[0].count) + 1}`;
+      const tx =
+        transaction_type === "Cash"
+          ? "csh"
+          : transaction_type === "UPI"
+          ? "upi"
+          : "crd";
+      sales_no = `${date.getFullYear()}${
+        parseInt(date.getMonth()) + 1
+      }${date.getDate()}${parseInt(sales_count.rows[0].count) + 1}${tx}`;
 
       const brokenData = await splitInvoice(items);
       // console.log("\n\nbroken data : \n\n", brokenData);
@@ -344,8 +357,10 @@ router.post("/sale", async (req, res) => {
         );
         for (j = 0; j < data.length; j++) {
           // invoice ID in formate yyyy-mm-dd-shop-invoice_no
-          const invoice_number = `${toISOLocal(date)
-            .slice(0, 10)}-${shops_id}-${invoiceList.rowCount}`;
+          const invoice_number = `${toISOLocal(date).slice(
+            0,
+            10
+          )}-${shops_id}-${invoiceList.rowCount}`;
           console.log(`\n\t3 broken Data ${j} : \n\t`, data[j]);
           console.log(
             `\nsales_no: ${sales_no},\ninvoice_number: ${invoice_number},\nshops_id: ${shops_id},\nusers_id: ${users_id},\nproducts_id: ${data[j].products_id},\nqty: ${data[j].qty},\nprice: ${data[j].price},\ntotal: ${data[j].total},\ntransaction_type: ${transaction_type}\n\n`
@@ -353,7 +368,9 @@ router.post("/sale", async (req, res) => {
           if (data[j].qty <= 0) {
             continue;
           }
-          data[j].total = parseInt(data[j].qty) * (parseFloat(data[j].price) - parseFloat(data[j].discount));
+          data[j].total =
+            parseInt(data[j].qty) *
+            (parseFloat(data[j].price) - parseFloat(data[j].discount));
           // saveLog.push(data[j].products_id);
           const invoiceSaved = await pool.query(
             `INSERT INTO invoices( sales_no, invoice_number, shops_id, users_id, products_id, qty, price, 
@@ -512,8 +529,15 @@ router.post("/blkSales", async (req, res) => {
         [shops_id, date]
       );
       console.log(sales_date);
-      sales_no = `${date.getFullYear()}${parseInt(date.getMonth()) + 1
-        }${date.getDate()}${parseInt(sales_count.rows[0].count) + 1}`;
+      const tx =
+      transaction_type === "Cash"
+        ? "csh"
+        : transaction_type === "UPI"
+        ? "upi"
+        : "crd";
+      sales_no = `${date.getFullYear()}${
+        parseInt(date.getMonth()) + 1
+      }${date.getDate()}${parseInt(sales_count.rows[0].count) + 1}${tx}`;
       console.log("9 sales_no: ", sales_count.rows[0]);
       for (let i = 0; i < items.length; i++) {
         const { products_id, price, qty_cash, qty_card, qty_upi } = items[i];
@@ -568,9 +592,10 @@ router.post("/blkSales", async (req, res) => {
                 [shops_id, date]
               );
               // invoice ID in formate yyyy-mm-dd-shop-invoice_no
-              const invoice_number = `${toISOLocal(new Date(sales_date))
-                .slice(0, 10)}-${shops_id}-${parseInt(invoiceList.rows[0].count) + 1
-                }`;
+              const invoice_number = `${toISOLocal(new Date(sales_date)).slice(
+                0,
+                10
+              )}-${shops_id}-${parseInt(invoiceList.rows[0].count) + 1}`;
               // console.log("11 invoice_number: ", invoice_number);
               for (j = 0; j < data.length; j++) {
                 console.log(`\n\n12 broken Data ${j} : \n`, data[j]);
