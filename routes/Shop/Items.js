@@ -293,9 +293,9 @@ router.post("/sale", async (req, res) => {
   let qty_cash = 0,
     qty_card = 0,
     qty_upi = 0;
-  const date = new Date();
-  // console.log(data.length);
-  const { shops_id, users_id, transaction_type, items } = fdata;
+    // console.log(data.length);
+    const { shops_id, users_id, transaction_type, items, sDate } = fdata;
+    const date = new Date(sDate || new Date());
   // console.log(items);
   console.log("\n\n\n1 items:\n ", items);
   if (fdata && items.length > 0) {
@@ -323,8 +323,8 @@ router.post("/sale", async (req, res) => {
       const sales_count = await pool.query(
         `SELECT COUNT( DISTINCT sales_no) AS count FROM invoices
         WHERE shops_id = $1 and
-        inserted_at = CURRENT_DATE`,
-        [shops_id]
+        inserted_at = $2`,
+        [shops_id, date]
       );
       sales_no = `${date.getFullYear()}${parseInt(date.getMonth()) + 1
         }${date.getDate()}${parseInt(sales_count.rows[0].count) + 1}`;
@@ -339,12 +339,12 @@ router.post("/sale", async (req, res) => {
         const invoiceList = await pool.query(
           `SELECT * FROM invoices
           WHERE shops_id = $1 and
-          invoice_date = CURRENT_DATE`,
-          [shops_id]
+          invoice_date = $2`,
+          [shops_id, date]
         );
         for (j = 0; j < data.length; j++) {
           // invoice ID in formate yyyy-mm-dd-shop-invoice_no
-          const invoice_number = `${toISOLocal(new Date())
+          const invoice_number = `${toISOLocal(date)
             .slice(0, 10)}-${shops_id}-${invoiceList.rowCount}`;
           console.log(`\n\t3 broken Data ${j} : \n\t`, data[j]);
           console.log(
@@ -357,8 +357,8 @@ router.post("/sale", async (req, res) => {
           // saveLog.push(data[j].products_id);
           const invoiceSaved = await pool.query(
             `INSERT INTO invoices( sales_no, invoice_number, shops_id, users_id, products_id, qty, price, 
-              discount, total, transaction_type)
-            VALUES ( $1, $2, $3, $4, $5, $6, $7, $8, $9, $10 )
+              discount, total, transaction_type, invoice_date )
+            VALUES ( $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11 )
             RETURNING sales_no`,
             [
               sales_no,
@@ -371,6 +371,7 @@ router.post("/sale", async (req, res) => {
               data[j].discount,
               data[j].total,
               transaction_type,
+              date,
             ]
           );
           if (invoiceSaved.rowCount) {
@@ -435,8 +436,9 @@ router.post("/sale", async (req, res) => {
               }
               const addSales = await pool.query(
                 `INSERT INTO sales( sales_date, shops_id, products_id, qty, price, qty_cash, qty_card, qty_upi)
-            VALUES ( CURRENT_DATE, $1, $2, $3, $4, $5, $6, $7 )`,
+            VALUES ( $1, $2, $3, $4, $5, $6, $7, $8 )`,
                 [
+                  date,
                   shops_id,
                   data[j].products_id,
                   data[j].qty,
