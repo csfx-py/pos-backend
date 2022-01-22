@@ -355,16 +355,22 @@ router.post("/sale", async (req, res) => {
           invoice_date = $2`,
           [shops_id, date]
         );
+        const lastInv = invoiceList.rows[
+          invoiceList.rowCount - 1
+        ]?.invoice_number.split("-") || [0];
+        const consecutive = parseInt(lastInv[lastInv.length - 1]) + 1;
         for (j = 0; j < data.length; j++) {
           // invoice ID in formate yyyy-mm-dd-shop-invoice_no
           const invoice_number = `${toISOLocal(date).slice(
             0,
             10
-          )}-${shops_id}-${invoiceList.rowCount}`;
+          )}-${shops_id}-${consecutive}`;
           console.log(`\n\t3 broken Data ${j} : \n\t`, data[j]);
           console.log(
             `\nsales_no: ${sales_no},\ninvoice_number: ${invoice_number},\nshops_id: ${shops_id},\nusers_id: ${users_id},\nproducts_id: ${data[j].products_id},\nqty: ${data[j].qty},\nprice: ${data[j].price},\ntotal: ${data[j].total},\ntransaction_type: ${transaction_type}\n\n`
           );
+          // throw custom error
+          throw new Error("Error");
           if (data[j].qty <= 0) {
             continue;
           }
@@ -530,11 +536,11 @@ router.post("/blkSales", async (req, res) => {
       );
       console.log(sales_date);
       const tx =
-      transaction_type === "Cash"
-        ? "csh"
-        : transaction_type === "UPI"
-        ? "upi"
-        : "crd";
+        transaction_type === "Cash"
+          ? "csh"
+          : transaction_type === "UPI"
+          ? "upi"
+          : "crd";
       sales_no = `${date.getFullYear()}${
         parseInt(date.getMonth()) + 1
       }${date.getDate()}${parseInt(sales_count.rows[0].count) + 1}${tx}`;
@@ -591,11 +597,16 @@ router.post("/blkSales", async (req, res) => {
                 WHERE shops_id = $1 and invoice_date = $2`,
                 [shops_id, date]
               );
+
+              const lastInv = invoiceList.rows[
+                invoiceList.rowCount - 1
+              ]?.invoice_number.split("-") || [0];
+              const consecutive = parseInt(lastInv[lastInv.length - 1]) + 1;
               // invoice ID in formate yyyy-mm-dd-shop-invoice_no
               const invoice_number = `${toISOLocal(new Date(sales_date)).slice(
                 0,
                 10
-              )}-${shops_id}-${parseInt(invoiceList.rows[0].count) + 1}`;
+              )}-${shops_id}-${consecutive}`;
               // console.log("11 invoice_number: ", invoice_number);
               for (j = 0; j < data.length; j++) {
                 console.log(`\n\n12 broken Data ${j} : \n`, data[j]);
@@ -912,16 +923,16 @@ router.post("/invoice", async (req, res) => {
 
 // @route   POST shop/invoices
 router.post("/invoices", async (req, res) => {
-  const { shops_id } = req.body;
+  const { shops_id, sDate, eDate } = req.body;
   try {
     const invoices = await pool.query(
       `SELECT i.sales_no, i.invoice_date, i.invoice_number,
       p.name, i.qty, i.price, i.total, i.discount, i.transaction_type
       FROM invoices i
       left join products p on p.id=i.products_id
-      WHERE shops_id = $1
+      WHERE shops_id = $1 and i.invoice_date between $2 and $3
       ORDER BY i.invoice_date DESC, i.invoice_number DESC`,
-      [shops_id]
+      [shops_id, sDate, eDate]
     );
     if (invoices.rowCount) {
       return res.status(200).send({
