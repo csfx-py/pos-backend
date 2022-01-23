@@ -125,7 +125,9 @@ CREATE TABLE shops (
     id SERIAL PRIMARY KEY,
     name TEXT UNIQUE NOT NULL,
     license TEXT NOT NULL,
-    price_to_use TEXT NOT NULL
+    price_to_use TEXT NOT NULL,
+    address TEXT NOT NULL,
+    phone TEXT NOT NULL
 );
 -- CREATE domains table
 CREATE TABLE domains (
@@ -213,6 +215,9 @@ CREATE TABLE IF NOT EXISTS dsr (
     CONSTRAINT products_id FOREIGN KEY(products_id) REFERENCES products(id) ON DELETE SET NULL,
     CONSTRAINT shops_id FOREIGN KEY(shops_id) REFERENCES shops(id) ON DELETE SET NULL
 );
+
+-- alter table shops add column address text, add column phone text;
+-- alter table shops alter column address set not null, alter column phone set not null;
 
 -- update stock set stock = 200 where true;
 -- truncate purchase restart IDENTITY;
