@@ -143,10 +143,8 @@ CREATE TABLE stock (
     products_id INTEGER NOT NULL,
     shops_id INTEGER NOT NULL,
     stock INTEGER NOT NULL,
-    CONSTRAINT products_id FOREIGN KEY(products_id) REFERENCES products(id) ON DELETE
-    SET NULL,
-        CONSTRAINT shops_id FOREIGN KEY(shops_id) REFERENCES shops(id) ON DELETE
-    SET NULL
+    CONSTRAINT products_id FOREIGN KEY(products_id) REFERENCES products(id) ON DELETE SET NULL,
+    CONSTRAINT shops_id FOREIGN KEY(shops_id) REFERENCES shops(id) ON DELETE SET NULL
 );
 -- Create purchase table
 CREATE TABLE purchase (
@@ -158,10 +156,8 @@ CREATE TABLE purchase (
     qty_item integer NOT NULL,
     purchase_date date NOT NULL DEFAULT CURRENT_DATE,
     inserted_at DATE DEFAULT CURRENT_DATE NOT NULL,
-    CONSTRAINT products_id FOREIGN KEY(products_id) REFERENCES products(id) ON DELETE
-    SET NULL,
-        CONSTRAINT shops_id FOREIGN KEY(shops_id) REFERENCES shops(id) ON DELETE
-    SET NULL
+    CONSTRAINT products_id FOREIGN KEY(products_id) REFERENCES products(id) ON DELETE SET NULL,
+    CONSTRAINT shops_id FOREIGN KEY(shops_id) REFERENCES shops(id) ON DELETE SET NULL
 );
 -- add shops
 insert into shops(name, license, price_to_use)

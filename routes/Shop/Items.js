@@ -336,11 +336,10 @@ router.post("/sale", async (req, res) => {
         transaction_type === "Cash"
           ? "csh"
           : transaction_type === "UPI"
-          ? "upi"
-          : "crd";
-      sales_no = `${date.getFullYear()}${
-        parseInt(date.getMonth()) + 1
-      }${date.getDate()}${parseInt(sales_count.rows[0].count) + 1}${tx}`;
+            ? "upi"
+            : "crd";
+      sales_no = `${date.getFullYear()}${parseInt(date.getMonth()) + 1
+        }${date.getDate()}${parseInt(sales_count.rows[0].count) + 1}${tx}`;
 
       const brokenData = await splitInvoice(items);
       // console.log("\n\nbroken data : \n\n", brokenData);
@@ -537,11 +536,10 @@ router.post("/blkSales", async (req, res) => {
         transaction_type === "Cash"
           ? "csh"
           : transaction_type === "UPI"
-          ? "upi"
-          : "crd";
-      sales_no = `${date.getFullYear()}${
-        parseInt(date.getMonth()) + 1
-      }${date.getDate()}${parseInt(sales_count.rows[0].count) + 1}${tx}`;
+            ? "upi"
+            : "crd";
+      sales_no = `${date.getFullYear()}${parseInt(date.getMonth()) + 1
+        }${date.getDate()}${parseInt(sales_count.rows[0].count) + 1}${tx}`;
       console.log("9 sales_no: ", sales_count.rows[0]);
       for (let i = 0; i < items.length; i++) {
         const { products_id, price, qty_cash, qty_card, qty_upi } = items[i];
@@ -1015,6 +1013,89 @@ router.post("/invoices/by-brand", async (req, res) => {
         invoices: [],
       });
     }
+  } catch (err) {
+    console.log("err: ", err);
+    return res.status(500).send({
+      invoices: "No invoices found",
+    });
+  }
+});
+
+// @route   POST shop/stock-opening
+router.post("/stock-opening", async (req, res) => {
+  // {
+  //   "shops_id":2,
+  //   "products_id":141,
+  //   "eDate":"{{date}}"
+  // }
+  const { shops_id, products_id, eDate } = req.body;
+  try {
+    const totalPurchase = await pool.query(
+      `SELECT sum(p.qty_case * pd.case_qty +  p.qty_item) as total
+      FROM purchase p
+      left join products pd on pd.id = p.products_id
+      WHERE p.shops_id = $1 and p.products_id = $2 and
+      p.purchase_date < $3`,
+      [shops_id, products_id, eDate]
+    );
+    const totalSales = await pool.query(
+      `SELECT sum(s.qty) as total
+      FROM sales s
+      WHERE s.shops_id = $1 and s.products_id = $2 and
+      s.sales_date < $3`,
+      [shops_id, products_id, eDate]
+    );
+    const openingStock = totalPurchase.rows[0].total - totalSales.rows[0].total;
+    return res.status(200).send({
+      totalPurchase: totalPurchase.rows[0].total,
+      totalSales: totalSales.rows[0].total,
+      openingStock,
+    });
+  } catch (err) {
+    console.log("err: ", err);
+    return res.status(500).send({
+      invoices: "No invoices found",
+    });
+  }
+});
+
+// @route   POST shop/all-stock-opening
+router.post("/all-stock-opening", async (req, res) => {
+  // {
+  //   "shops_id":2,
+  //   "eDate":"{{date}}"
+  // }
+  const { shops_id, eDate } = req.body;
+  try {
+    const totalPurchase = await pool.query(
+      `SELECT p.products_id as id, pd.name, sum(p.qty_case * pd.case_qty + p.qty_item) as total
+      FROM purchase p
+      left join products pd on pd.id = p.products_id
+      WHERE p.shops_id = $1 and p.purchase_date < $2
+      group by p.products_id, pd.name`,
+      [shops_id, eDate]
+    );
+    const totalSales = await pool.query(
+      `SELECT p.id, p.name, sum(s.qty) as total
+      FROM sales s
+      left join products p on p.id = s.products_id
+      WHERE s.shops_id = $1 and s.sales_date < $2
+      group by p.id, p.name`,
+      [shops_id, eDate]
+    );
+    const openingStock = totalPurchase.rows.map((purchase) => {
+      const sales = totalSales.rows.find((sale) => sale.id === purchase.id);
+      return {
+        id: purchase.id,
+        name: purchase.name,
+        totalPurchase: purchase.total,
+        totalSales: sales ? sales.total : 0,
+        openingStock: purchase.total - (sales ? sales.total : 0),
+      };
+    });
+    return res.status(200).send({
+      openingStock,
+    });
   } catch (err) {
     console.log("err: ", err);
     return res.status(500).send({
