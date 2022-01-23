@@ -3,6 +3,25 @@ const pool = require("../../db");
 const splitInvoice = require("../../utils/splitInvoice");
 const toISOLocal = require("../../utils/toIsoLocal");
 
+// get shop data
+router.get("/shop-details", async (req, res) => {
+  const { shops_id } = req.query;
+  try {
+    const shop = await pool.query(`SELECT * FROM shops WHERE id = $1`, [
+      shops_id,
+    ]);
+    if (shop.rows.length) {
+      return res.status(200).json(shop.rows[0]);
+    }
+    return res.status(404).json({
+      error: "Shop not found",
+    });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server Error");
+  }
+});
+
 router.get("/items", async (req, res) => {
   const { shops_id } = req.query;
   try {
@@ -336,10 +355,11 @@ router.post("/sale", async (req, res) => {
         transaction_type === "Cash"
           ? "csh"
           : transaction_type === "UPI"
-            ? "upi"
-            : "crd";
-      sales_no = `${date.getFullYear()}${parseInt(date.getMonth()) + 1
-        }${date.getDate()}${parseInt(sales_count.rows[0].count) + 1}${tx}`;
+          ? "upi"
+          : "crd";
+      sales_no = `${date.getFullYear()}${
+        parseInt(date.getMonth()) + 1
+      }${date.getDate()}${parseInt(sales_count.rows[0].count) + 1}${tx}`;
 
       const brokenData = await splitInvoice(items);
       // console.log("\n\nbroken data : \n\n", brokenData);
@@ -536,10 +556,11 @@ router.post("/blkSales", async (req, res) => {
         transaction_type === "Cash"
           ? "csh"
           : transaction_type === "UPI"
-            ? "upi"
-            : "crd";
-      sales_no = `${date.getFullYear()}${parseInt(date.getMonth()) + 1
-        }${date.getDate()}${parseInt(sales_count.rows[0].count) + 1}${tx}`;
+          ? "upi"
+          : "crd";
+      sales_no = `${date.getFullYear()}${
+        parseInt(date.getMonth()) + 1
+      }${date.getDate()}${parseInt(sales_count.rows[0].count) + 1}${tx}`;
       console.log("9 sales_no: ", sales_count.rows[0]);
       for (let i = 0; i < items.length; i++) {
         const { products_id, price, qty_cash, qty_card, qty_upi } = items[i];
