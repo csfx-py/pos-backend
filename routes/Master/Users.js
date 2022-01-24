@@ -19,7 +19,6 @@ router.get("/users", verifyAdmin, async (req, res) => {
 
 router.post("/register-admin", verifyMaster, async (req, res) => {
   const { name, password } = req.body;
-  console.log(req.body);
   try {
     //   check exists
     const userList = await pool.query(`SELECT * FROM users WHERE roles_id = 1`);
