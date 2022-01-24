@@ -52,7 +52,8 @@ router.get("/items", async (req, res) => {
       Left join categories c on c.id = p.categories_id
       Left join sizes si on si.id = p.sizes_id
       Left join brands b on b.id = p.brands_id
-      order by p.categories_id, p.name`,);
+      order by p.categories_id, p.name`
+    );
     if (itemList.rowCount === 0)
       return res.status(404).send("Master items list empty");
 
@@ -62,7 +63,6 @@ router.get("/items", async (req, res) => {
     return res.status(500).send("Internal server error");
   }
 });
-
 
 // ---------------------------------------------------------------------------
 
@@ -134,30 +134,56 @@ router.post("/size", verifyAdmin, async (req, res) => {
 });
 
 // insert products rout
-router.post("/products", async (req, res) => {
+router.post("/products", verifyAdmin, async (req, res) => {
   let existLog = [];
   let saveLog = [];
   let errLog = [];
   const data = req.body;
-  console.log("1 body data: ", req.body);
   if (data) {
-    const { name, brands_id, categories_id, sizes_id, barcode, purchase_price, case_qty, case_price, discount, mrp, mrp1, mrp2, mrp3, mrp4 } = data;
+    const {
+      name,
+      brands_id,
+      categories_id,
+      sizes_id,
+      barcode,
+      purchase_price,
+      case_qty,
+      case_price,
+      discount,
+      mrp,
+      mrp1,
+      mrp2,
+      mrp3,
+      mrp4,
+    } = data;
     try {
       // begin transaction
       await pool.query("BEGIN");
       const itemList = await pool.query(
         `insert into products( name, brands_id, categories_id, sizes_id, barcode, purchase_price, case_qty, case_price, discount, mrp, mrp1, mrp2, mrp3, mrp4 )
           VALUES( $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14 ) RETURNING id`,
-        [name, brands_id || null, categories_id, sizes_id, barcode, purchase_price, case_qty, case_price, discount || 0, mrp, mrp1, mrp2, mrp3, mrp4]
+        [
+          name,
+          brands_id || null,
+          categories_id,
+          sizes_id,
+          barcode,
+          purchase_price,
+          case_qty,
+          case_price,
+          discount || 0,
+          mrp,
+          mrp1,
+          mrp2,
+          mrp3,
+          mrp4,
+        ]
       );
-      console.log(itemList.rows[0].id);
       if (itemList.rowCount) {
-        console.log("3 ", itemList.rows[0]);
         let id = itemList.rows[0].id;
         saveLog.push({ id });
         await pool.query("COMMIT");
       } else {
-        console.log("4 ", itemList.rows[0]);
         errLog.push({ id });
         await pool.query("ROLLBACK");
       }
@@ -174,31 +200,64 @@ router.post("/products", async (req, res) => {
   }
 });
 
-
 // insert xl products rout
-router.post("/xl-products", async (req, res) => {
+router.post("/xl-products", verifyAdmin, async (req, res) => {
   let existLog = [];
   let saveLog = [];
   let errLog = [];
   const data = req.body;
-  console.log("1 body data: ", req.body);
   if (data && data.length > 0) {
     for (i = 0; i < data.length; i++) {
-      console.log("2 body data: ", data[i]);
-      const { name, brand, category, size, barcode, purchase_price, case_qty, case_price, discount, mrp, mrp1, mrp2, mrp3, mrp4 } = data[i];
+      const {
+        name,
+        brand,
+        category,
+        size,
+        barcode,
+        purchase_price,
+        case_qty,
+        case_price,
+        discount,
+        mrp,
+        mrp1,
+        mrp2,
+        mrp3,
+        mrp4,
+      } = data[i];
       try {
         // begin transaction
         await pool.query("BEGIN");
-        const brands = await pool.query(`select id from brands where name=$1`, [brand]);
-        const categories = await pool.query(`select id from categories where name=$1`, [category]);
-        const sizes = await pool.query(`select id from sizes where size=$1`, [size]);
+        const brands = await pool.query(`select id from brands where name=$1`, [
+          brand,
+        ]);
+        const categories = await pool.query(
+          `select id from categories where name=$1`,
+          [category]
+        );
+        const sizes = await pool.query(`select id from sizes where size=$1`, [
+          size,
+        ]);
         const insertProduct = await pool.query(
           `insert into products( name, brands_id, categories_id, sizes_id, barcode, purchase_price, case_qty, case_price, discount, mrp, mrp1, mrp2, mrp3, mrp4 )
           VALUES( $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14 ) RETURNING id`,
-          [name, brands.rows[0]?.id || null, categories.rows[0].id, sizes.rows[0].id, barcode || null, purchase_price, case_qty, case_price, discount || 0, mrp, mrp1 || null, mrp2 || null, mrp3 || null, mrp4 || null]);
-        console.log(insertProduct.rows[0].id);
+          [
+            name,
+            brands.rows[0]?.id || null,
+            categories.rows[0].id,
+            sizes.rows[0].id,
+            barcode || null,
+            purchase_price,
+            case_qty,
+            case_price,
+            discount || 0,
+            mrp,
+            mrp1 || null,
+            mrp2 || null,
+            mrp3 || null,
+            mrp4 || null,
+          ]
+        );
         if (insertProduct.rowCount) {
-          console.log("3 ", insertProduct.rows[0]);
           let id = insertProduct.rows[0].id;
           saveLog.push({ id });
           await pool.query("COMMIT");
@@ -211,11 +270,32 @@ router.post("/xl-products", async (req, res) => {
         await pool.query("ROLLBACK");
         errLog.push({ name });
       }
-    } return res.status(200).send({
+    }
+    return res.status(200).send({
       exist: existLog,
       save: saveLog,
       err: errLog,
     });
+  }
+});
+
+router.put("/modify", verifyAdmin, async (req, res) => {
+  const { id, field, newVal } = req.body;
+  try {
+    const modify = await pool.query(
+      `UPDATE products SET ${field}=$1 WHERE id=$2 RETURNING id`,
+      [newVal, id]
+    );
+    if (modify.rowCount) {
+      return res.status(200).send({
+        id: modify.rows[0].id,
+        field: field,
+        newVal: newVal,
+      });
+    }
+    return res.status(401).send("modify failed");
+  } catch (error) {
+    return res.status(500).send("Internal Server Error");
   }
 });
 
