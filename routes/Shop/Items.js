@@ -54,61 +54,6 @@ router.get("/items", async (req, res) => {
   }
 });
 
-// insert products
-router.post("/items", async (req, res) => {
-  const data = req.body;
-  if (data && data.length > 0) {
-    for (i = 0; i < data.length; i++) {
-      const {
-        name,
-        brands_id,
-        categories_id,
-        sizes_id,
-        barcode,
-        purchase_price,
-        case_qty,
-        case_price,
-        discount,
-        mrp,
-        mrp1,
-        mrp2,
-        mrp3,
-        mrp4,
-      } = data[i];
-      try {
-        // begin transaction
-        const itemList = await pool.query(
-          `insert into products( name, brands_id, categories_id, sizes_id, barcode, per_case, purchase_price, case_price, mrp, discount, mrp1, mrp2, mrp3, mrp4 )
-          VALUES( $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14 )`,
-          [
-            name,
-            brands_id,
-            categories_id,
-            sizes_id,
-            barcode,
-            purchase_price,
-            case_qty,
-            case_price,
-            discount,
-            mrp,
-            mrp1,
-            mrp2,
-            mrp3,
-            mrp4,
-          ]
-        );
-        if (itemList.rowCount)
-          return res.status(404).send("No Items found in Shop");
-
-        return res.status(200).send(itemList.rows);
-      } catch (error) {
-        console.log(error);
-        return res.status(500).send("Internal server error");
-      }
-    }
-  }
-});
-
 // stock
 router.post("/stock", async (req, res) => {
   const data = req.body;
@@ -787,12 +732,15 @@ router.post("/purchase-report", async (req, res) => {
   try {
     if (sDate.length && eDate.length) {
       const purchase = await pool.query(
-        `SELECT pd.name, p.price, p.qty_case, p.qty_item
+        `SELECT pd.name, p.price, p.qty_case, p.qty_item, 
+        p.qty_case * pd.case_qty + p.qty_item as total, 
+        (p.qty_case * pd.case_qty + p.qty_item) * p.price as amt
          FROM purchase p
          left join products pd on pd.id = p.products_id
          WHERE p.shops_id = $1 and p.purchase_date between $2 and $3`,
         [shops_id, sDate, eDate]
       );
+      console.log(shops_id, sDate, eDate);
       if (purchase.rowCount) {
         return res.status(200).send({
           purchase: purchase.rows,
@@ -884,9 +832,19 @@ router.post("/invoices", async (req, res) => {
       ORDER BY i.invoice_date DESC, i.invoice_number DESC`,
       [shops_id, sDate, eDate]
     );
+    const invoices_report = await pool.query(
+      `SELECT invoice_date, invoice_number, sum(total) as amt
+      FROM invoices
+      WHERE shops_id = $1 and invoice_date between $2 and $3
+      GROUP BY invoice_date, invoice_number
+      ORDER BY invoice_date, invoice_number`,
+      [shops_id, sDate, eDate]
+    );
+
     if (invoices.rowCount) {
       return res.status(200).send({
         invoices: [...invoices.rows],
+        invoiceReports: invoices_report.rows,
       });
     } else {
       return res.status(404).send({
@@ -1039,19 +997,19 @@ router.post("/all-stock-opening", async (req, res) => {
   const { shops_id, eDate } = req.body;
   try {
     const totalPurchase = await pool.query(
-      `SELECT p.products_id as id, pd.name, sum(p.qty_case * pd.case_qty + p.qty_item) as total
+      `SELECT p.products_id as id, pd.name, sum(p.qty_case * pd.case_qty + p.qty_item) as total, pd.categories_id
       FROM purchase p
       left join products pd on pd.id = p.products_id
       WHERE p.shops_id = $1 and p.purchase_date < $2
-      group by p.products_id, pd.name`,
+      group by p.products_id, pd.name, pd.categories_id`,
       [shops_id, eDate]
     );
     const totalSales = await pool.query(
-      `SELECT p.id, p.name, sum(s.qty) as total
+      `SELECT p.id, p.name, sum(s.qty) as total, p.categories_id
       FROM sales s
       left join products p on p.id = s.products_id
       WHERE s.shops_id = $1 and s.sales_date < $2
-      group by p.id, p.name`,
+      group by p.id, p.name, p.categories_id`,
       [shops_id, eDate]
     );
     const openingStock = totalPurchase.rows.map((purchase) => {
@@ -1063,10 +1021,27 @@ router.post("/all-stock-opening", async (req, res) => {
         totalSales: sales ? parseInt(sales.total) : 0,
         openingStock:
           parseInt(purchase.total) - (sales ? parseInt(sales.total) : 0),
+        categories_id: purchase.categories_id,
       };
     });
-    // sort by id
-    openingStock.sort((a, b) => a.id - b.id);
+    // sort by categories_id and name
+    openingStock.sort((a, b) => {
+      if (a.categories_id > b.categories_id) {
+        return 1;
+      } else if (a.categories_id < b.categories_id) {
+        return -1;
+      } else {
+        if (a.name > b.name) {
+          return 1;
+        } else if (a.name < b.name) {
+          return -1;
+        } else {
+          return 0;
+        }
+      }
+    });
+
+    // openingStock.sort((a, b) => a.id - b.id);
     return res.status(200).send(openingStock);
   } catch (err) {
     console.log(err);
