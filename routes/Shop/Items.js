@@ -1,5 +1,6 @@
 const router = require("express").Router();
 const pool = require("../../db");
+const padInvoice = require("../../utils/padInvoice");
 const splitInvoice = require("../../utils/splitInvoice");
 const toISOLocal = require("../../utils/toIsoLocal");
 
@@ -307,7 +308,11 @@ router.post("/sale", async (req, res) => {
         const lastInv = invoiceList.rows[
           invoiceList.rowCount - 1
         ]?.invoice_number.split("-") || [0];
-        const consecutive = parseInt(lastInv[lastInv.length - 1]) + 1;
+        const consecutive = padInvoice(
+          parseInt(lastInv[lastInv.length - 1]) + 1,
+          4
+        );
+
         for (j = 0; j < data.length; j++) {
           // invoice ID in formate yyyy-mm-dd-shop-invoice_no
           const invoice_number = `${toISOLocal(date).slice(
@@ -518,7 +523,10 @@ router.post("/blkSales", async (req, res) => {
               const lastInv = invoiceList.rows[
                 invoiceList.rowCount - 1
               ]?.invoice_number.split("-") || [0];
-              const consecutive = parseInt(lastInv[lastInv.length - 1]) + 1;
+              const consecutive = padInvoice(
+                parseInt(lastInv[lastInv.length - 1]) + 1,
+                4
+              );
               // invoice ID in formate yyyy-mm-dd-shop-invoice_no
               const invoice_number = `${toISOLocal(new Date(sales_date)).slice(
                 0,
