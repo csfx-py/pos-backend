@@ -1059,4 +1059,48 @@ router.post("/all-stock-opening", async (req, res) => {
   }
 });
 
+// @route   GET shop/todays-sales
+router.post("/excel-report", async (req, res) => {
+  const { shops_id, sDate } = req.body;
+  try {
+    if (sDate.length) {
+      console.log(sDate);
+      const sales = await pool.query(
+        `SELECT pd.name, s.qty, s.price as mrp, s.qty_cash, s.qty_card, s.qty_upi, s.price * s.qty as total,
+          c.name as category
+         FROM sales s
+         left join products pd on pd.id = s.products_id
+          left join categories c on c.id = pd.categories_id
+         WHERE s.shops_id = $1 and s.sales_date = $2`,
+        [shops_id, sDate]
+      );
+      const invoiceRange = await pool.query(
+        `(SELECT invoice_number FROM invoices 
+          WHERE shops_id = $1 and invoice_date = $2 
+          ORDER BY invoice_number DESC LIMIT 1) 
+          UNION ALL
+          (SELECT invoice_number FROM invoices
+            WHERE shops_id = $1 and invoice_date = $2
+            ORDER BY invoice_number ASC LIMIT 1)`,
+        [shops_id, sDate]
+      );
+      if (sales.rowCount) {
+        return res.status(200).send({
+          sales: sales.rows,
+          range: invoiceRange.rows,
+        });
+      } else {
+        return res.status(404).send({
+          sales: [],
+        });
+      }
+    }
+  } catch (err) {
+    console.log(err);
+    return res.status(500).send({
+      sales: "No sales found",
+    });
+  }
+});
+
 module.exports = router;
