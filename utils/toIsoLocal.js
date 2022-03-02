@@ -6,12 +6,12 @@ module.exports = (d) => {
   off = Math.abs(off);
 
   return (
-    d.getFullYear() +
-    "-" +
     z(d.getMonth() + 1) +
     "-" +
     z(d.getDate()) +
-    "T" +
+    "-" +
+    d.getFullYear() +
+    "-" +
     z(d.getHours()) +
     ":" +
     z(d.getMinutes()) +
@@ -24,4 +24,4 @@ module.exports = (d) => {
     ":" +
     z(off % 60)
   );
-}
+};
