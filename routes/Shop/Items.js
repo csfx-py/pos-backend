@@ -315,10 +315,11 @@ router.post("/sale", async (req, res) => {
 
         for (j = 0; j < data.length; j++) {
           // invoice ID in formate yyyy-mm-dd-shop-invoice_no
-          const invoice_number = `${toISOLocal(date).slice(
-            0,
-            10
-          )}-${shops_id}-${consecutive}`;
+          // const invoice_number = `${toISOLocal(date).slice(
+          //   0,
+          //   10
+          // )}-${shops_id}-${consecutive}`;
+          const invoice_number = `${shops_id}-${users_id}-${consecutive}`;
           if (data[j].qty <= 0) {
             continue;
           }
@@ -528,10 +529,11 @@ router.post("/blkSales", async (req, res) => {
                 4
               );
               // invoice ID in formate yyyy-mm-dd-shop-invoice_no
-              const invoice_number = `${toISOLocal(new Date(sales_date)).slice(
-                0,
-                10
-              )}-${shops_id}-${consecutive}`;
+              // const invoice_number = `${toISOLocal(new Date(sales_date)).slice(
+              //   0,
+              //   10
+              // )}-${shops_id}-${consecutive}`;
+              const invoice_number = `${shops_id}-${users_id}-${consecutive}`;
               for (j = 0; j < data.length; j++) {
                 // saveLog.push(data[j].products_id);
                 const invoiceSaved = await pool.query(
@@ -776,7 +778,8 @@ router.post("/sales-report", async (req, res) => {
         `SELECT pd.name, s.qty, s.price as mrp, s.qty_cash, s.qty_card, s.qty_upi, s.price * s.qty as total
          FROM sales s
          left join products pd on pd.id = s.products_id
-         WHERE s.shops_id = $1 and s.sales_date between $2 and $3`,
+         WHERE s.shops_id = $1 and s.sales_date between $2 and $3
+         ORDER BY pd.categories_id, pd.name`,
         [shops_id, sDate, eDate]
       );
       if (sales.rowCount) {
