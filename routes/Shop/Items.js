@@ -1035,8 +1035,10 @@ router.post("/all-stock-opening", async (req, res) => {
         categories_id: purchase.categories_id,
       };
     });
+    // filter with openingStock > 0
+    const filteredOpen = openingStock.filter((stock) => stock.openingStock > 0);
     // sort by categories_id and name
-    openingStock.sort((a, b) => {
+    filteredOpen.sort((a, b) => {
       if (a.categories_id > b.categories_id) {
         return 1;
       } else if (a.categories_id < b.categories_id) {
@@ -1053,7 +1055,7 @@ router.post("/all-stock-opening", async (req, res) => {
     });
 
     // openingStock.sort((a, b) => a.id - b.id);
-    return res.status(200).send(openingStock);
+    return res.status(200).send(filteredOpen);
   } catch (err) {
     console.log(err);
     return res.status(500).send({
