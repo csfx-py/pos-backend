@@ -1066,12 +1066,12 @@ router.post("/all-stock-opening", async (req, res) => {
 
 // @route   GET shop/todays-sales
 router.post("/excel-report", async (req, res) => {
-  const { shops_id, sDate } = req.body;
+  const { shops_id, sDate, txnType } = req.body;
+  const txn = txnType.toLowerCase(); 
   try {
     if (sDate.length) {
-      console.log(sDate);
       const sales = await pool.query(
-        `SELECT pd.name, s.qty, s.price as mrp, s.qty_cash, s.qty_card, s.qty_upi, s.price * s.qty as total,
+        `SELECT pd.name, s.price as mrp, s.qty_${txn} as qty, s.price * s.qty_${txn} as total,
           c.name as category
          FROM sales s
          left join products pd on pd.id = s.products_id
