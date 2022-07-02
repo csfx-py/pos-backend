@@ -287,3 +287,4 @@ CREATE TABLE IF NOT EXISTS dsr (
 -- truncate purchase restart IDENTITY;
 -- truncate sales restart IDENTITY;
 -- truncate invoices restart IDENTITY;
+-- drop table brands, categories, domains, sizes, shops, products, stock, purchase, sales, roles, users, invoices, dsr;
